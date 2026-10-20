@@ -1,11 +1,11 @@
-import { TOPICS } from "./content/index.js?v=10";
-import { mountQuiz } from "./modes/quiz.js?v=10";
-import { mountOrdering } from "./modes/ordering.js?v=10";
-import { mountMatching } from "./modes/matching.js?v=10";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=10";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=10";
-import { mountRaceSim } from "./modes/race-sim.js?v=10";
-import { mountFlashcards } from "./modes/flashcards.js?v=10";
+import { TOPICS } from "./content/index.js?v=11";
+import { mountQuiz } from "./modes/quiz.js?v=11";
+import { mountOrdering } from "./modes/ordering.js?v=11";
+import { mountMatching } from "./modes/matching.js?v=11";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=11";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=11";
+import { mountRaceSim } from "./modes/race-sim.js?v=11";
+import { mountFlashcards } from "./modes/flashcards.js?v=11";
 
 // Legacy (pre-profile) single-user keys — migrated into the first profile created
 // on a given device, so nobody loses progress when this feature rolls out.
@@ -34,26 +34,67 @@ function saveJSON(key, value) {
   }
 }
 
-function progressKey(profile) {
-  return `osquest_progress_v2::${profile}`;
+function progressKey(id) {
+  return `osquest_progress_v2::${id}`;
 }
-function readingsKey(profile) {
-  return `osquest_readings_v1::${profile}`;
+function readingsKey(id) {
+  return `osquest_readings_v1::${id}`;
 }
 
+function makeProfileId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// Profiles are { id, name } — the id (not the name) is what scopes storage, so two
+// different people who happen to type the same name never share or overwrite a save.
 let profiles = loadJSON(PROFILES_KEY, []);
-let activeProfile = loadJSON(ACTIVE_PROFILE_KEY, null);
-let progress = activeProfile ? loadJSON(progressKey(activeProfile), {}) : {};
-let readingsDone = activeProfile ? loadJSON(readingsKey(activeProfile), {}) : {};
+let activeProfileId = loadJSON(ACTIVE_PROFILE_KEY, null);
+
+// One-time migration from the very first version of profiles, where both `profiles`
+// and the active-profile pointer were just plain name strings with no id — and
+// progress/readings were keyed directly by that name. Give each a real id, and move
+// its saved data from the old name-keyed storage to the new id-keyed storage.
+if (profiles.some((p) => typeof p === "string")) {
+  profiles = profiles.map((p) => {
+    if (typeof p !== "string") return p;
+    const id = makeProfileId();
+    const name = p;
+    const oldProgress = loadJSON(progressKey(name), null);
+    const oldReadings = loadJSON(readingsKey(name), null);
+    if (oldProgress) saveJSON(progressKey(id), oldProgress);
+    if (oldReadings) saveJSON(readingsKey(id), oldReadings);
+    try {
+      localStorage.removeItem(progressKey(name));
+      localStorage.removeItem(readingsKey(name));
+    } catch {
+      /* ignore */
+    }
+    return { id, name };
+  });
+  saveJSON(PROFILES_KEY, profiles);
+}
+if (typeof activeProfileId === "string" && !profiles.some((p) => p.id === activeProfileId)) {
+  const match = profiles.find((p) => p.name === activeProfileId);
+  activeProfileId = match ? match.id : null;
+  saveJSON(ACTIVE_PROFILE_KEY, activeProfileId);
+}
+
+function activeProfile() {
+  return profiles.find((p) => p.id === activeProfileId) ?? null;
+}
+
+let progress = activeProfileId ? loadJSON(progressKey(activeProfileId), {}) : {};
+let readingsDone = activeProfileId ? loadJSON(readingsKey(activeProfileId), {}) : {};
 
 function saveProgress(p) {
-  if (!activeProfile) return;
-  saveJSON(progressKey(activeProfile), p);
+  if (!activeProfileId) return;
+  saveJSON(progressKey(activeProfileId), p);
 }
 
 function saveReadingsDone(r) {
-  if (!activeProfile) return;
-  saveJSON(readingsKey(activeProfile), r);
+  if (!activeProfileId) return;
+  saveJSON(readingsKey(activeProfileId), r);
 }
 
 function toggleReadingDone(topicId, idx) {
@@ -62,44 +103,46 @@ function toggleReadingDone(topicId, idx) {
   saveReadingsDone(readingsDone);
 }
 
-// Create (or switch to) a named profile, scoping all future reads/writes to it.
-// The very first profile ever created on a device inherits any pre-profile
-// (legacy) progress, so early users don't lose anything.
-function selectProfile(name) {
-  const isNew = !profiles.includes(name);
-  if (isNew) {
-    profiles = [...profiles, name];
-    saveJSON(PROFILES_KEY, profiles);
-    if (profiles.length === 1) {
-      const legacyProgress = loadJSON(LEGACY_PROGRESS_KEY, null);
-      const legacyReadings = loadJSON(LEGACY_READINGS_KEY, null);
-      if (legacyProgress) saveJSON(progressKey(name), legacyProgress);
-      if (legacyReadings) saveJSON(readingsKey(name), legacyReadings);
-    }
+// Always creates a brand-new, distinctly-scoped profile — even if the name matches
+// an existing one (that's two different people, not the same returning person; the
+// caller is responsible for warning about the name collision before calling this).
+function createProfile(name) {
+  const id = makeProfileId();
+  profiles = [...profiles, { id, name }];
+  saveJSON(PROFILES_KEY, profiles);
+  if (profiles.length === 1) {
+    const legacyProgress = loadJSON(LEGACY_PROGRESS_KEY, null);
+    const legacyReadings = loadJSON(LEGACY_READINGS_KEY, null);
+    if (legacyProgress) saveJSON(progressKey(id), legacyProgress);
+    if (legacyReadings) saveJSON(readingsKey(id), legacyReadings);
   }
-  activeProfile = name;
-  saveJSON(ACTIVE_PROFILE_KEY, name);
-  progress = loadJSON(progressKey(name), {});
-  readingsDone = loadJSON(readingsKey(name), {});
+  selectProfileById(id);
+}
+
+function selectProfileById(id) {
+  activeProfileId = id;
+  saveJSON(ACTIVE_PROFILE_KEY, id);
+  progress = loadJSON(progressKey(id), {});
+  readingsDone = loadJSON(readingsKey(id), {});
 }
 
 function signOutProfile() {
-  activeProfile = null;
+  activeProfileId = null;
   saveJSON(ACTIVE_PROFILE_KEY, null);
   progress = {};
   readingsDone = {};
 }
 
-function deleteProfile(name) {
-  profiles = profiles.filter((p) => p !== name);
+function deleteProfile(id) {
+  profiles = profiles.filter((p) => p.id !== id);
   saveJSON(PROFILES_KEY, profiles);
   try {
-    localStorage.removeItem(progressKey(name));
-    localStorage.removeItem(readingsKey(name));
+    localStorage.removeItem(progressKey(id));
+    localStorage.removeItem(readingsKey(id));
   } catch {
     /* ignore */
   }
-  if (activeProfile === name) signOutProfile();
+  if (activeProfileId === id) signOutProfile();
 }
 
 // A "pass" is a fully-correct attempt — the bar for counting toward mastery.
@@ -239,25 +282,36 @@ function renderProfileGate() {
   root.appendChild(intro);
 
   if (profiles.length > 0) {
+    // If two profiles share a display name (two different people with the same
+    // name), label them "(#1)", "(#2)", ... in creation order so they're distinguishable.
+    const nameCounts = {};
+    profiles.forEach((p) => { nameCounts[p.name] = (nameCounts[p.name] ?? 0) + 1; });
+    const nameSeen = {};
+
     const list = document.createElement("div");
     list.className = "profile-list";
-    profiles.forEach((name) => {
+    profiles.forEach((p) => {
+      let label = p.name;
+      if (nameCounts[p.name] > 1) {
+        nameSeen[p.name] = (nameSeen[p.name] ?? 0) + 1;
+        label = `${p.name} (#${nameSeen[p.name]})`;
+      }
       const row = document.createElement("div");
       row.className = "profile-row";
       const btn = document.createElement("button");
       btn.className = "btn profile-select-btn";
-      btn.textContent = `👤 ${name}`;
+      btn.textContent = `👤 ${label}`;
       btn.addEventListener("click", () => {
-        selectProfile(name);
+        selectProfileById(p.id);
         navigate("");
       });
       const del = document.createElement("button");
       del.className = "ghost-btn profile-delete-btn";
       del.textContent = "🗑";
-      del.title = `Delete ${name}'s profile and progress`;
+      del.title = `Delete ${label}'s profile and progress`;
       del.addEventListener("click", () => {
-        if (confirm(`Delete ${name}'s profile? This permanently erases their saved progress on this device.`)) {
-          deleteProfile(name);
+        if (confirm(`Delete ${label}'s profile? This permanently erases their saved progress on this device.`)) {
+          deleteProfile(p.id);
           renderProfileGate();
         }
       });
@@ -283,7 +337,16 @@ function renderProfileGate() {
   const go = () => {
     const name = input.value.trim();
     if (!name) return;
-    selectProfile(name);
+    const collision = profiles.some((p) => p.name.toLowerCase() === name.toLowerCase());
+    if (collision) {
+      const ok = confirm(
+        `There's already a profile named "${name}" on this device.\n\n` +
+        `If that's you, click Cancel and select it from the list above instead.\n` +
+        `Click OK to create a separate NEW profile (also named "${name}") for a different person.`
+      );
+      if (!ok) return;
+    }
+    createProfile(name);
     navigate("");
   };
   formWrap.querySelector("#new-profile-btn").addEventListener("click", go);
@@ -664,13 +727,14 @@ function renderBlock(topicId, blockId) {
 function updateProfileBadge() {
   const badge = document.getElementById("profile-badge");
   if (!badge) return;
-  badge.textContent = activeProfile ? `👤 ${activeProfile}` : "";
-  badge.style.display = activeProfile ? "" : "none";
+  const p = activeProfile();
+  badge.textContent = p ? `👤 ${p.name}` : "";
+  badge.style.display = p ? "" : "none";
 }
 
 function router() {
   updateProfileBadge();
-  if (!activeProfile) {
+  if (!activeProfileId) {
     renderProfileGate();
     return;
   }
@@ -705,8 +769,9 @@ document.getElementById("btn-switch-user").addEventListener("click", () => {
 });
 
 document.getElementById("btn-reset-progress").addEventListener("click", () => {
-  if (!activeProfile) return;
-  if (confirm(`Reset ${activeProfile}'s progress? This can't be undone — other profiles on this device are unaffected.`)) {
+  const p = activeProfile();
+  if (!p) return;
+  if (confirm(`Reset ${p.name}'s progress? This can't be undone — other profiles on this device are unaffected.`)) {
     progress = {};
     readingsDone = {};
     saveProgress(progress);
