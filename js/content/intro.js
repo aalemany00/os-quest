@@ -19,12 +19,27 @@ export default {
         { front: "Batch processing → Multiprogramming → Time sharing", back: "Batch: a human operator ran jobs one at a time. Multiprogramming: load several jobs into memory and switch rapidly between them to overlap I/O wait with computation. Time sharing: the modern model where many users/programs seemingly run simultaneously." },
         { front: "Design goals (exact)", back: "Abstraction (ease of use), High performance (minimize overhead), Protection/Isolation (a buggy or malicious program can't corrupt another program or the OS), Reliability (non-stop operation) — plus energy-efficiency, security, and mobility as secondary goals." },
         { front: "volatile (C keyword) — common misconception", back: "volatile is only a compiler hint that prevents a variable from being aggressively optimized/cached in a register. It does NOT prevent race conditions and does NOT make an operation like counter++ atomic." },
+        { front: "OS as 'resource manager'", back: "The OS manages CPU, memory, and disk as shared resources, 'doing so efficiently or fairly.' This is the formal textbook framing, alongside the 'virtual machine' framing." },
+        { front: "Why the OS is sometimes called a 'standard library'", back: "Because applications access OS services through system calls — a typical OS exports a few hundred of them, much like a library's API." },
+        { front: "Three major course themes", back: "Virtualization (of the CPU and memory), Concurrency, and Persistence — the organizing structure of the whole course." },
+      ],
+    },
+    {
+      type: "ordering",
+      id: "intro-history-order",
+      title: "A Brief History of OS Design",
+      prompt: "Put these computing eras in the order they actually happened.",
+      steps: [
+        "Batch processing — a human operator sets up and runs jobs one at a time on early mainframes",
+        "Multiprogramming — the OS loads several jobs into memory and switches rapidly between them, overlapping I/O wait with computation",
+        "Time sharing — the modern model where many users/programs seemingly use the computer simultaneously, interactively",
       ],
     },
     {
       type: "quiz",
       id: "intro-quiz",
       title: "Big Picture Quiz",
+      sampleSize: 6,
       questions: [
         {
           q: "Which virtualization pairing is WRONG?",
@@ -75,6 +90,34 @@ export default {
           ],
           correctIndex: 1,
           explain: "A system call differs from an ordinary procedure call in two ways at once: it transfers control into the OS, and it simultaneously raises the hardware privilege level to kernel mode — safely, because it can only jump to handlers the OS pre-registered at boot.",
+        },
+        {
+          q: "A trap can be a system call, an exception, or an interrupt. Which of these is an EXCEPTION rather than a system call or interrupt?",
+          options: ["A program calls open() to open a file", "A divide-by-zero error occurs mid-program", "A timer fires after 10ms", "A key is pressed on the keyboard"],
+          correctIndex: 1,
+          explain: "A trap is any transfer to kernel mode. System calls are planned (the program asks for something); interrupts are external events (timer, keyboard); exceptions are errors like divide-by-zero or a page fault.",
+        },
+        {
+          q: "Which pair correctly matches 'mechanism' and 'policy'?",
+          options: [
+            "Mechanism = which process runs next; Policy = how a context switch saves registers",
+            "Mechanism = how a context switch saves/restores registers; Policy = which process runs next",
+            "Mechanism and policy both mean the scheduling algorithm",
+            "Mechanism is used only in kernel mode; policy is used only in user mode",
+          ],
+          correctIndex: 1,
+          explain: "Mechanism answers 'how' (the low-level method), policy answers 'which' (the decision). Keeping them separate lets you swap the policy (e.g. a different scheduling algorithm) without rewriting the mechanism (the context-switch code).",
+        },
+        {
+          q: "What does 'multiprogramming' add on top of plain batch processing?",
+          options: [
+            "Running one job completely before starting the next, exactly like batch processing",
+            "Loading several jobs into memory and switching between them, so CPU time isn't wasted while one job waits on I/O",
+            "Letting many interactive users share the machine at once",
+            "Removing the need for an operating system entirely",
+          ],
+          correctIndex: 1,
+          explain: "Multiprogramming was the step between batch processing and full time-sharing: by keeping several jobs in memory, the OS could switch to another job whenever the current one blocked on I/O, instead of leaving the CPU idle.",
         },
       ],
     },

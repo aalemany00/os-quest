@@ -80,6 +80,28 @@ export default {
           correctIndex: 1,
           explain: "execvp only returns if it FAILS (returning -1). On success the calling process's code, data, heap, and stack are all replaced by the new program — there is no 'after' to return to.",
         },
+        {
+          q: "The tutorial reads a command with `fscanf(stdin, \"%s\", cmd);` then checks `cmd[strlen(cmd)]` and finds it equals 0. What does this prove?",
+          options: [
+            "fscanf() failed",
+            "fscanf() automatically NULL-terminates the string it reads — index strlen(cmd) is exactly where the terminator sits",
+            "The input was empty",
+            "cmd is an integer, not a string",
+          ],
+          correctIndex: 1,
+          explain: "strlen() returns the length NOT counting the terminator, so cmd[strlen(cmd)] is the very next byte — the NULL character (ASCII 0) that fscanf() placed there.",
+        },
+        {
+          q: "Why does the tutorial use `sizeof` when calling malloc(), e.g. `malloc(sizeof(char *) * argc)`?",
+          options: [
+            "sizeof is optional stylistic sugar with no real effect",
+            "To correctly compute how many bytes are needed for argc pointers, since pointer size can vary by platform",
+            "sizeof returns the number of elements in argv",
+            "To convert argc from an int to a pointer",
+          ],
+          correctIndex: 1,
+          explain: "malloc() takes a byte count, not an element count. sizeof(char *) gives the exact size of one pointer on the current platform, so multiplying by argc gets the byte count right regardless of pointer size.",
+        },
       ],
     },
   ],

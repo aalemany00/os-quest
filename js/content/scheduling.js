@@ -19,6 +19,10 @@ export default {
         { front: "MLFQ (Multi-Level Feedback Queue)", back: "Invented by Corbato et al. in 1962 for CTSS (Turing Award winning work). Multiple priority queues, each with its own time quantum; a scheduler that learns job behavior over time instead of needing to know burst lengths up front." },
         { front: "Allotment / Starvation / Gaming the scheduler", back: "Allotment: time a job may spend at a priority level before demotion. Starvation: too many interactive jobs can starve a long-running job of all CPU time. Gaming: deliberately giving up the CPU just before the allotment ends, to dodge demotion." },
         { front: "Priority boost", back: "Periodically moving ALL jobs back to the topmost queue, to guarantee long-running jobs eventually get the CPU again and don't starve forever." },
+        { front: "Throughput (exact formula)", back: "Completed jobs ÷ total time — higher is better." },
+        { front: "CPU utilization (exact formula)", back: "Useful busy time ÷ total time — higher is better. Overlapping a job's I/O wait with another job's CPU burst is a classic way to push this toward 100%." },
+        { front: "Voo-doo constants (Ousterhout's Law)", back: "Tunable 'magic number' scheduler parameters (like the priority-boost period S) that have no principled closed-form value: too high and long jobs starve between boosts; too low and interactive jobs are under-served." },
+        { front: "Real-world MLFQ: Solaris vs. FreeBSD", back: "Solaris's 'Time-Sharing' class uses 60 queues, slices from 20ms up to a few hundred ms, with a boost roughly every 1 second. FreeBSD instead computes priority from a decayed history of CPU usage rather than fixed queues." },
       ],
     },
     {
@@ -226,8 +230,46 @@ export default {
     },
     {
       type: "quiz",
+      id: "sched-io-overlap",
+      title: "Scheduling With I/O: Why Overlap Matters",
+      questions: [
+        {
+          q: "Job A does 50ms of CPU work in five 10ms chunks separated by I/O waits (40ms of I/O total). Job B does 50ms of pure CPU work, no I/O. Run naively (B only starts after A fully finishes, with the CPU sitting idle during each of A's I/O waits): what's the course's own computed CPU utilization?",
+          options: ["50%", "71% (100ms useful out of 140ms total)", "100%", "29%"],
+          correctIndex: 1,
+          explain: "Total time is 140ms (A's 50ms CPU + 40ms I/O + B's 50ms CPU, run back to back), but only 100ms of that is useful CPU work — 100/140 ≈ 71% utilization, with throughput 2 jobs/140ms.",
+        },
+        {
+          q: "Now run A and B overlapped (schedule B's CPU time into A's I/O-wait gaps, STCF-style). What happens to CPU utilization and total time?",
+          options: [
+            "Utilization drops to 50%, total time increases",
+            "Utilization rises to 100% and total time shrinks to 100ms — both jobs finish in less wall-clock time with the CPU never idle",
+            "No change at all",
+            "Utilization becomes undefined",
+          ],
+          correctIndex: 1,
+          explain: "By running B during A's I/O waits, the CPU is never idle: utilization goes from 71% to 100%, and total time drops from 140ms to 100ms (throughput 2 jobs/100ms vs 2 jobs/140ms) — the exact numbers from the course's worked example.",
+        },
+      ],
+    },
+    {
+      type: "scheduler-practice",
+      id: "sched-random-practice",
+      title: "Infinite Random Practice (All Algorithms)",
+      intro: "A brand-new, randomly generated set of jobs every round — the algorithm is picked at random each time too. Practice as many rounds as you want; the correct answer is always computed by the real scheduling engine, not a fixed answer key.",
+      algorithms: ["FIFO", "SJF", "STCF", "RR", "MLFQ"],
+      jobCount: [2, 4],
+      burstRange: [2, 9],
+      arrivalSpread: 6,
+      quantumRange: [1, 3],
+      mlfqQuantums: [2, 4, 8],
+      rounds: 8,
+    },
+    {
+      type: "quiz",
       id: "sched-quiz",
       title: "Scheduling Concepts Quiz",
+      sampleSize: 6,
       questions: [
         {
           q: "What is the 'convoy effect' in FCFS scheduling?",

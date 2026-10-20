@@ -121,6 +121,76 @@ export default {
       ],
     },
     {
+      type: "matching",
+      id: "proc-api-categories",
+      title: "The 5 Process API Categories",
+      pairs: [
+        { term: "Create", def: "The interface the OS provides so a shell (or double-clicking an icon) can bring a new process into existence." },
+        { term: "Destroy", def: "A forceful way to terminate a process, for cases where it won't stop on its own." },
+        { term: "Wait", def: "An interface that lets a caller block until a process has stopped running." },
+        { term: "Miscellaneous Control", def: "Other controls beyond kill/wait — e.g. suspending a process (stop it running for a while) and then resuming it." },
+        { term: "Status", def: "Ways to get information about a process — e.g. how long it has run, or what state it's in." },
+      ],
+    },
+    {
+      type: "flashcards",
+      id: "proc-extras-flash",
+      title: "Signals, Pipes, and I/O Redirection",
+      cards: [
+        { front: "kill() / signal()", back: "kill() sends a signal to a process (pause it, kill it, etc.); signal() lets a process register a handler to catch and respond to a signal instead of taking the default action." },
+        { front: "Ctrl-C and Ctrl-Z", back: "Ctrl-C sends SIGINT (interrupt/terminate the foreground process). Ctrl-Z sends SIGTSTP (stop/pause it — resumable later with the shell's `fg`)." },
+        { front: "pipe()", back: "Connects one process's output directly to another process's input — the mechanism behind shell pipelines like `ls | grep foo`." },
+        { front: "I/O redirection trick (e.g. `wc p4.c > newfile.txt`)", back: "The child closes STDOUT_FILENO, then opens the target file. UNIX assigns a newly-opened file descriptor the LOWEST currently-free number — which is now 0 (the one just closed) — so the next exec'd program's stdout silently goes to the file instead of the screen." },
+        { front: "\"A fork() in the road\" (Baumann et al., HotOS '19)", back: "A real research critique of fork()'s design, proposing simpler alternatives like spawn() — cited in the course as a pointer to ongoing debate about this decades-old API." },
+      ],
+    },
+    {
+      type: "quiz",
+      id: "proc-figures-quiz",
+      title: "Process Traces & States (Figures 4.3 / 4.4)",
+      questions: [
+        {
+          q: "Figure 4.3 shows two CPU-only processes (no I/O) sharing one CPU. What determines when P0 stops running and P1 starts?",
+          options: [
+            "P0 must crash first",
+            "The scheduler's policy — in this simple trace, P0 runs to completion, then P1 runs",
+            "They run simultaneously on the same core",
+            "P1 has a higher PID so it always goes first",
+          ],
+          correctIndex: 1,
+          explain: "On a single CPU, only one process runs at a time; the scheduler's policy (here, simply let P0 finish first) decides the ordering.",
+        },
+        {
+          q: "In Figure 4.4, P0 initiates I/O partway through and becomes Blocked, so the OS runs P1 during that wait. What is the direct benefit?",
+          options: [
+            "It has no effect on performance",
+            "It improves resource (CPU) utilization — the CPU isn't left idle while P0 waits on I/O",
+            "It guarantees P0 will finish faster than if it ran alone",
+            "It prevents P0 from ever running again",
+          ],
+          correctIndex: 1,
+          explain: "Running P1 while P0 is Blocked on I/O keeps the CPU busy instead of idle — the same core idea behind multiprogramming.",
+        },
+        {
+          q: "When P0's I/O finishes (I/O: done) while P1 is still Running, what state does P0 move to?",
+          options: [
+            "Running — it immediately preempts P1",
+            "Ready — whether to preempt P1 right away isn't obvious; 'these types of decisions are made by the OS scheduler'",
+            "Blocked again",
+            "Terminated",
+          ],
+          correctIndex: 1,
+          explain: "I/O completion moves a process to Ready, not directly to Running. The book is explicit that whether to immediately switch back to P0 or let P1 keep running is a scheduling POLICY decision, not an automatic mechanism.",
+        },
+        {
+          q: "xv6's process states include UNUSED, EMBRYO, SLEEPING, RUNNABLE, RUNNING, and ZOMBIE. Which of these roughly corresponds to the simple 'Ready' state?",
+          options: ["UNUSED", "EMBRYO", "RUNNABLE", "ZOMBIE"],
+          correctIndex: 2,
+          explain: "RUNNABLE means the process could run but hasn't been scheduled onto the CPU yet — the same idea as the simplified 'Ready' state in the 3-state model.",
+        },
+      ],
+    },
+    {
       type: "quiz",
       id: "proc-review-exercise",
       title: "Review Exercise: fork() Fan-Out & Shell Trace",

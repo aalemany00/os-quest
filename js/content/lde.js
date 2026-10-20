@@ -19,6 +19,7 @@ export default {
         { front: "switch() routine", back: "The OS routine that performs a context switch between two DIFFERENT processes: (a) save regs(A) to proc-struct(A), (b) restore regs(B) from proc-struct(B), (c) switch to kernel stack(B)." },
         { front: "Voluntary vs. involuntary context switch", back: "Voluntary: caused by the process itself (e.g. a blocking system call). Involuntary: forced from outside the process (e.g. a timer interrupt)." },
         { front: "Common misconception: does every trap cause a context switch?", back: "No. A plain system call traps into the kernel and typically returns to the SAME process via return-from-trap. An actual context switch (switching to a different process) is a separate, deliberate step the OS chooses to take — not automatic on every kernel entry." },
+        { front: "The 'teller' analogy for system calls", back: "Customers (user processes) ask the teller (the OS's system calls) to perform restricted operations on their behalf — device I/O, task swapping/context switching, memory management (malloc()), process creation/destruction — rather than reaching behind the counter themselves." },
       ],
     },
     {
@@ -56,6 +57,28 @@ export default {
         "Hardware: restore B's registers from B's kernel stack",
         "Hardware: move to user mode and jump to B's program counter",
         "Process B is now running",
+      ],
+    },
+    {
+      type: "matching",
+      id: "lde-rings-match",
+      title: "x86 CPU Privilege Rings",
+      pairs: [
+        { term: "Ring 0", def: "Kernel — fully trusted; all instructions and registers are enabled." },
+        { term: "Ring 1", def: "VM kernel — used for virtual machine monitors between the OS and hardware." },
+        { term: "Ring 2", def: "Unused in most modern general-purpose OSes." },
+        { term: "Ring 3", def: "User — untrusted; exception registers, HALT, MMU instructions, OS memory access, and I/O device access are all disabled." },
+      ],
+    },
+    {
+      type: "quiz",
+      id: "lde-trap-classify",
+      title: "Classify the Trap",
+      questions: [
+        { q: "A program calls malloc(), which eventually invokes a system call for more memory. What kind of trap is this?", options: ["System call", "Exception", "Interrupt"], correctIndex: 0, explain: "It's planned by the program itself — the definition of a system call trap." },
+        { q: "A program accesses memory it was never allocated, triggering a page fault. What kind of trap is this?", options: ["System call", "Exception", "Interrupt"], correctIndex: 1, explain: "An exception is an error condition like a page fault or divide-by-zero, detected by the hardware while running the program's own instructions." },
+        { q: "The keyboard controller signals that a key was pressed. What kind of trap is this?", options: ["System call", "Exception", "Interrupt"], correctIndex: 2, explain: "An interrupt comes from an external device/event, asynchronous to whatever the CPU happens to be running." },
+        { q: "The periodic timer fires to give the OS a chance to reschedule. What kind of trap is this?", options: ["System call", "Exception", "Interrupt"], correctIndex: 2, explain: "The timer interrupt is the classic example of an interrupt used specifically to guarantee the OS regains control of the CPU." },
       ],
     },
     {

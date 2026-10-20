@@ -3,6 +3,7 @@ import { mountQuiz } from "./modes/quiz.js";
 import { mountOrdering } from "./modes/ordering.js";
 import { mountMatching } from "./modes/matching.js";
 import { mountSchedulerSim } from "./modes/scheduler-sim.js";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js";
 import { mountRaceSim } from "./modes/race-sim.js";
 import { mountFlashcards } from "./modes/flashcards.js";
 
@@ -120,6 +121,7 @@ function blockLabel(type) {
     case "ordering": return "Ordering Puzzle";
     case "matching": return "Matching";
     case "scheduler-sim": return "Scheduler Sim";
+    case "scheduler-practice": return "Random Practice";
     case "race-sim": return "Concurrency Sim";
     default: return type;
   }
@@ -195,6 +197,7 @@ function renderBlock(topicId, blockId) {
     case "ordering": mountOrdering(shell, block, ctx); break;
     case "matching": mountMatching(shell, block, ctx); break;
     case "scheduler-sim": mountSchedulerSim(shell, block, ctx); break;
+    case "scheduler-practice": mountSchedulerPractice(shell, block, ctx); break;
     case "race-sim": mountRaceSim(shell, block, ctx); break;
     default: shell.textContent = `Unknown block type: ${block.type}`;
   }

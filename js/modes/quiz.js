@@ -1,10 +1,16 @@
+import { prepareQuestions } from "./util.js";
+
 // Multiple-choice quiz mode.
-// block: { id, title, questions: [{ q, options: string[], correctIndex, explain }] }
+// block: { id, title, sampleSize?, questions: [{ q, options: string[], correctIndex, explain }] }
+// Each playthrough shuffles question order, shuffles each question's options, and (if
+// sampleSize is set and there are more questions than that) draws a random subset —
+// so replaying a block for study practice doesn't show the same quiz every time.
 
 export function mountQuiz(root, block, ctx) {
+  let questions = prepareQuestions(block.questions, block.sampleSize);
   let i = 0;
   let score = 0;
-  const total = block.questions.length;
+  let total = questions.length;
 
   function renderQuestion() {
     root.innerHTML = "";
@@ -13,7 +19,7 @@ export function mountQuiz(root, block, ctx) {
     progress.textContent = `Question ${i + 1} / ${total} — Score: ${score}`;
     root.appendChild(progress);
 
-    const q = block.questions[i];
+    const q = questions[i];
     const qEl = document.createElement("div");
     qEl.className = "quiz-question";
     qEl.textContent = q.q;
@@ -79,8 +85,10 @@ export function mountQuiz(root, block, ctx) {
     row.className = "flex-row";
     const retry = document.createElement("button");
     retry.className = "btn secondary";
-    retry.textContent = "Retry";
+    retry.textContent = "New shuffle";
     retry.addEventListener("click", () => {
+      questions = prepareQuestions(block.questions, block.sampleSize);
+      total = questions.length;
       i = 0;
       score = 0;
       renderQuestion();

@@ -1,4 +1,5 @@
 import { runSchedule } from "../engine/scheduler.js";
+import { shuffle } from "./util.js";
 
 // block: { id, title, algorithm, quantum?, mlfq?, jobs: [{name, arrival, burst}],
 //          intro?: string, questions: [{ metric: 'completion'|'turnaround'|'response'|'waiting', job, options, correctIndex }] }
@@ -73,9 +74,10 @@ export function mountSchedulerSim(root, block, ctx) {
     mlfq: block.mlfq,
   });
 
+  let questions = shuffle(block.questions).map((q) => ({ ...q, options: shuffle(q.options) }));
   let i = 0;
   let score = 0;
-  const total = block.questions.length;
+  let total = questions.length;
 
   function metricValue(metric, jobName) {
     return perJob[jobName]?.[metric];
@@ -105,7 +107,7 @@ export function mountSchedulerSim(root, block, ctx) {
 
     renderJobsTable(root, block.jobs);
 
-    const q = block.questions[i];
+    const q = questions[i];
     const qEl = document.createElement("div");
     qEl.className = "quiz-question";
     qEl.textContent = `What is the ${metricLabel(q.metric)} of job ${q.job}?`;
@@ -175,8 +177,10 @@ export function mountSchedulerSim(root, block, ctx) {
     row.className = "flex-row";
     const retry = document.createElement("button");
     retry.className = "btn secondary";
-    retry.textContent = "Retry";
+    retry.textContent = "New shuffle";
     retry.addEventListener("click", () => {
+      questions = shuffle(block.questions).map((q) => ({ ...q, options: shuffle(q.options) }));
+      total = questions.length;
       i = 0;
       score = 0;
       render();
