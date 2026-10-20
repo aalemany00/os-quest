@@ -1,4 +1,4 @@
-import { renderStreakStatus } from "./util.js?v=13";
+import { renderStreakStatus } from "./util.js?v=14";
 
 // Step-ordering puzzle. Works well on touch via up/down buttons (no drag-and-drop needed).
 // block: { id, title, prompt, steps: string[] in correct order }

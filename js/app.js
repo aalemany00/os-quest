@@ -1,11 +1,11 @@
-import { TOPICS } from "./content/index.js?v=13";
-import { mountQuiz } from "./modes/quiz.js?v=13";
-import { mountOrdering } from "./modes/ordering.js?v=13";
-import { mountMatching } from "./modes/matching.js?v=13";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=13";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=13";
-import { mountRaceSim } from "./modes/race-sim.js?v=13";
-import { mountFlashcards } from "./modes/flashcards.js?v=13";
+import { TOPICS } from "./content/index.js?v=14";
+import { mountQuiz } from "./modes/quiz.js?v=14";
+import { mountOrdering } from "./modes/ordering.js?v=14";
+import { mountMatching } from "./modes/matching.js?v=14";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=14";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=14";
+import { mountRaceSim } from "./modes/race-sim.js?v=14";
+import { mountFlashcards } from "./modes/flashcards.js?v=14";
 
 // Legacy (pre-profile) single-user keys — migrated into the first profile created
 // on a given device, so nobody loses progress when this feature rolls out.
@@ -44,6 +44,39 @@ function readingsKey(id) {
 function makeProfileId() {
   if (window.crypto?.randomUUID) return window.crypto.randomUUID();
   return `p_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// An optional PIN is a casual deterrent, not real security — everything here is
+// still client-side and inspectable — but it stops someone from just clicking
+// another profile in the list on a shared device. Stored hashed, never in plain text.
+async function hashPin(pin) {
+  if (window.crypto?.subtle) {
+    const bytes = new TextEncoder().encode(pin);
+    const digest = await window.crypto.subtle.digest("SHA-256", bytes);
+    return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  // Fallback for very old browsers without SubtleCrypto: a simple non-cryptographic
+  // checksum. Still fine for "casual deterrent" purposes, just not collision-proof.
+  let hash = 0;
+  for (let i = 0; i < pin.length; i++) {
+    hash = (hash << 5) - hash + pin.charCodeAt(i);
+    hash |= 0;
+  }
+  return `djb2:${hash}`;
+}
+
+// Prompts for a profile's PIN and checks it. Returns true if there's no PIN set,
+// or if the entered one matches; false if the user cancels or gets it wrong.
+async function verifyPin(name, pinHash) {
+  if (!pinHash) return true;
+  const entered = prompt(`Enter the PIN for ${name}:`);
+  if (entered == null) return false;
+  const hash = await hashPin(entered);
+  if (hash !== pinHash) {
+    alert("Incorrect PIN.");
+    return false;
+  }
+  return true;
 }
 
 // Profiles are { id, name } — the id (not the name) is what scopes storage, so two
@@ -106,9 +139,9 @@ function toggleReadingDone(topicId, idx) {
 // Always creates a brand-new, distinctly-scoped profile — even if the name matches
 // an existing one (that's two different people, not the same returning person; the
 // caller is responsible for warning about the name collision before calling this).
-function createProfile(name) {
+function createProfile(name, pinHash = null) {
   const id = makeProfileId();
-  profiles = [...profiles, { id, name }];
+  profiles = [...profiles, { id, name, pinHash }];
   saveJSON(PROFILES_KEY, profiles);
   if (profiles.length === 1) {
     const legacyProgress = loadJSON(LEGACY_PROGRESS_KEY, null);
@@ -155,6 +188,7 @@ function buildSyncCode(id) {
     version: 1,
     id: p.id,
     name: p.name,
+    pinHash: p.pinHash ?? null,
     exportedAt: new Date().toISOString(),
     progress: loadJSON(progressKey(id), {}),
     readingsDone: loadJSON(readingsKey(id), {}),
@@ -174,9 +208,9 @@ function importProfile(data) {
   }
   const existing = profiles.find((p) => p.id === data.id);
   if (existing) {
-    profiles = profiles.map((p) => (p.id === data.id ? { ...p, name: data.name } : p));
+    profiles = profiles.map((p) => (p.id === data.id ? { ...p, name: data.name, pinHash: data.pinHash ?? p.pinHash ?? null } : p));
   } else {
-    profiles = [...profiles, { id: data.id, name: data.name }];
+    profiles = [...profiles, { id: data.id, name: data.name, pinHash: data.pinHash ?? null }];
   }
   saveJSON(PROFILES_KEY, profiles);
   saveJSON(progressKey(data.id), data.progress ?? {});
@@ -351,8 +385,9 @@ function renderProfileGate() {
       row.className = "profile-row";
       const btn = document.createElement("button");
       btn.className = "btn profile-select-btn";
-      btn.textContent = `👤 ${label}`;
-      btn.addEventListener("click", () => {
+      btn.textContent = `${p.pinHash ? "🔒" : "👤"} ${label}`;
+      btn.addEventListener("click", async () => {
+        if (!(await verifyPin(label, p.pinHash))) return;
         selectProfileById(p.id);
         navigate("");
       });
@@ -360,7 +395,8 @@ function renderProfileGate() {
       del.className = "ghost-btn profile-delete-btn";
       del.textContent = "🗑";
       del.title = `Delete ${label}'s profile and progress`;
-      del.addEventListener("click", () => {
+      del.addEventListener("click", async () => {
+        if (!(await verifyPin(label, p.pinHash))) return;
         if (confirm(`Delete ${label}'s profile? This permanently erases their saved progress on this device.`)) {
           deleteProfile(p.id);
           renderProfileGate();
@@ -379,13 +415,16 @@ function renderProfileGate() {
     <h3>${profiles.length > 0 ? "New player" : "Enter your name to start"}</h3>
     <div class="flex-row">
       <input type="text" id="new-profile-input" placeholder="Your name" maxlength="40" style="flex:1; min-width:160px;" />
+      <input type="password" id="new-profile-pin" placeholder="PIN (optional)" maxlength="12" inputmode="numeric" style="width:140px;" />
       <button class="btn" id="new-profile-btn">Start studying</button>
     </div>
+    <p style="color:var(--text-dim); font-size:0.9rem; margin-bottom:0;">Setting a PIN keeps others on this device from opening or deleting your profile — a light deterrent, not a real lock, since everything here lives in this browser. Leave it blank if you don't need that.</p>
   `;
   root.appendChild(formWrap);
 
   const input = formWrap.querySelector("#new-profile-input");
-  const go = () => {
+  const pinInput = formWrap.querySelector("#new-profile-pin");
+  const go = async () => {
     const name = input.value.trim();
     if (!name) return;
     const collision = profiles.some((p) => p.name.toLowerCase() === name.toLowerCase());
@@ -397,7 +436,9 @@ function renderProfileGate() {
       );
       if (!ok) return;
     }
-    createProfile(name);
+    const pin = pinInput.value.trim();
+    const pinHash = pin ? await hashPin(pin) : null;
+    createProfile(name, pinHash);
     navigate("");
   };
   formWrap.querySelector("#new-profile-btn").addEventListener("click", go);
