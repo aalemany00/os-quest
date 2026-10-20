@@ -1,11 +1,11 @@
-import { TOPICS } from "./content/index.js?v=12";
-import { mountQuiz } from "./modes/quiz.js?v=12";
-import { mountOrdering } from "./modes/ordering.js?v=12";
-import { mountMatching } from "./modes/matching.js?v=12";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=12";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=12";
-import { mountRaceSim } from "./modes/race-sim.js?v=12";
-import { mountFlashcards } from "./modes/flashcards.js?v=12";
+import { TOPICS } from "./content/index.js?v=13";
+import { mountQuiz } from "./modes/quiz.js?v=13";
+import { mountOrdering } from "./modes/ordering.js?v=13";
+import { mountMatching } from "./modes/matching.js?v=13";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=13";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=13";
+import { mountRaceSim } from "./modes/race-sim.js?v=13";
+import { mountFlashcards } from "./modes/flashcards.js?v=13";
 
 // Legacy (pre-profile) single-user keys — migrated into the first profile created
 // on a given device, so nobody loses progress when this feature rolls out.
@@ -134,11 +134,22 @@ function signOutProfile() {
 }
 
 // Export/Import is how a save follows a specific person across devices: there's no
-// server here to "log in" to, so the save file itself — carrying the profile's real
-// id, not just its display name — is what proves it's the same person's data.
-function exportProfile(id) {
+// server here to "log in" to, so the sync code itself — carrying the profile's real
+// id, not just its display name — is what proves it's the same person's data. It's
+// a plain copy-pasteable string (not a file), so it works fine on a phone.
+function encodeSyncCode(payload) {
+  const json = JSON.stringify(payload);
+  return btoa(unescape(encodeURIComponent(json)));
+}
+
+function decodeSyncCode(code) {
+  const json = decodeURIComponent(escape(atob(code.trim())));
+  return JSON.parse(json);
+}
+
+function buildSyncCode(id) {
   const p = profiles.find((prof) => prof.id === id);
-  if (!p) return;
+  if (!p) return null;
   const payload = {
     kind: "osquest-save",
     version: 1,
@@ -148,16 +159,7 @@ function exportProfile(id) {
     progress: loadJSON(progressKey(id), {}),
     readingsDone: loadJSON(readingsKey(id), {}),
   };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  const safeName = p.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-  a.download = `osquest-save-${safeName}-${payload.exportedAt.slice(0, 10)}.json`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  return encodeSyncCode(payload);
 }
 
 // Importing re-homes a profile on this device by its id: if a profile with that
@@ -167,7 +169,7 @@ function exportProfile(id) {
 // it (still using the original id), independent of any other locally-named profile.
 function importProfile(data) {
   if (!data || data.kind !== "osquest-save" || !data.id || !data.name) {
-    alert("That doesn't look like a valid OS Quest save file.");
+    alert("That doesn't look like a valid OS Quest sync code.");
     return;
   }
   const existing = profiles.find((p) => p.id === data.id);
@@ -409,26 +411,23 @@ function renderProfileGate() {
   importWrap.style.marginTop = "16px";
   importWrap.innerHTML = `
     <h3>Studying on a different device?</h3>
-    <p style="color:var(--text-dim); font-size:1.05rem; margin-top:0;">If you've exported a save from another device (look for the 💾 Export button in the top bar there), load that file here to continue exactly where you left off.</p>
-    <div class="flex-row">
-      <input type="file" id="import-file-input" accept="application/json" />
+    <p style="color:var(--text-dim); font-size:1.05rem; margin-top:0;">If you've got a sync code from another device (look for the 💾 Export button in the top bar there), paste it below to continue exactly where you left off.</p>
+    <textarea id="sync-code-input" rows="4" placeholder="Paste your sync code here" style="width:100%; background:var(--bg-elevated); color:var(--text); border:2px solid var(--border); border-radius:var(--radius); padding:10px; font-family:'SF Mono',Consolas,monospace; font-size:0.8rem; word-break:break-all;"></textarea>
+    <div class="flex-row" style="margin-top:12px;">
+      <button class="btn" id="import-code-btn">Load sync code</button>
     </div>
   `;
   root.appendChild(importWrap);
-  importWrap.querySelector("#import-file-input").addEventListener("change", (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const data = JSON.parse(reader.result);
-        importProfile(data);
-        navigate("");
-      } catch {
-        alert("Couldn't read that file — make sure it's an OS Quest save file (.json) exported from the Export button.");
-      }
-    };
-    reader.readAsText(file);
+  importWrap.querySelector("#import-code-btn").addEventListener("click", () => {
+    const code = importWrap.querySelector("#sync-code-input").value.trim();
+    if (!code) return;
+    try {
+      const data = decodeSyncCode(code);
+      importProfile(data);
+      navigate("");
+    } catch {
+      alert("That doesn't look like a valid sync code — make sure you copied the whole thing from the Export screen.");
+    }
   });
 }
 
@@ -682,6 +681,50 @@ function renderTopic(topicId) {
   root.appendChild(list);
 }
 
+function renderExportView() {
+  const p = activeProfile();
+  if (!p) {
+    navigate("");
+    return;
+  }
+  clearRoot();
+
+  const header = document.createElement("div");
+  header.className = "module-header";
+  header.innerHTML = `<button class="back-btn">&lt;&lt; Topics</button><h2>💾 Sync Code for ${p.name}</h2>`;
+  header.querySelector(".back-btn").addEventListener("click", () => navigate(""));
+  root.appendChild(header);
+
+  const code = buildSyncCode(p.id);
+
+  const shell = document.createElement("div");
+  shell.className = "mode-shell";
+  shell.innerHTML = `
+    <p style="color:var(--text-dim); font-size:1.1rem; margin-top:0;">Copy this code, then on your other device open OS Quest, go to "Studying on a different device?" on the sign-in screen, and paste it in. It carries a hidden unique ID, so it'll always find (or create) <em>your</em> profile there — never someone else's, even if they share your name.</p>
+    <textarea id="sync-code-output" readonly rows="6" style="width:100%; background:var(--bg-elevated); color:var(--text); border:2px solid var(--border); border-radius:var(--radius); padding:10px; font-family:'SF Mono',Consolas,monospace; font-size:0.8rem; word-break:break-all;"></textarea>
+    <div class="flex-row" style="margin-top:14px;">
+      <button class="btn" id="copy-code-btn">📋 Copy code</button>
+    </div>
+    <div id="copy-feedback" class="mode-progress" style="margin-top:10px;"></div>
+  `;
+  root.appendChild(shell);
+
+  const textarea = shell.querySelector("#sync-code-output");
+  textarea.value = code;
+
+  shell.querySelector("#copy-code-btn").addEventListener("click", async () => {
+    const feedback = shell.querySelector("#copy-feedback");
+    try {
+      await navigator.clipboard.writeText(code);
+      feedback.textContent = "✅ Copied to clipboard!";
+    } catch {
+      textarea.focus();
+      textarea.select();
+      feedback.textContent = "Couldn't auto-copy — the code is selected, so just copy it manually (Ctrl/Cmd+C).";
+    }
+  });
+}
+
 function renderNotesHub() {
   clearRoot();
 
@@ -826,6 +869,8 @@ function router() {
     renderReadings();
   } else if (parts[0] === "notes") {
     renderNotesHub();
+  } else if (parts[0] === "export") {
+    renderExportView();
   } else {
     renderHub();
   }
@@ -845,9 +890,8 @@ document.getElementById("btn-switch-user").addEventListener("click", () => {
 });
 
 document.getElementById("btn-export").addEventListener("click", () => {
-  const p = activeProfile();
-  if (!p) return;
-  exportProfile(p.id);
+  if (!activeProfile()) return;
+  navigate("export");
 });
 
 document.getElementById("btn-reset-progress").addEventListener("click", () => {

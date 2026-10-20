@@ -1,4 +1,4 @@
-import { renderStreakStatus } from "./util.js?v=12";
+import { renderStreakStatus } from "./util.js?v=13";
 
 // Concurrency / race-condition interleaving stepper + prediction quiz.
 // block: {
