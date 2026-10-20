@@ -1,11 +1,11 @@
-import { TOPICS } from "./content/index.js?v=3";
-import { mountQuiz } from "./modes/quiz.js?v=3";
-import { mountOrdering } from "./modes/ordering.js?v=3";
-import { mountMatching } from "./modes/matching.js?v=3";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=3";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=3";
-import { mountRaceSim } from "./modes/race-sim.js?v=3";
-import { mountFlashcards } from "./modes/flashcards.js?v=3";
+import { TOPICS } from "./content/index.js?v=4";
+import { mountQuiz } from "./modes/quiz.js?v=4";
+import { mountOrdering } from "./modes/ordering.js?v=4";
+import { mountMatching } from "./modes/matching.js?v=4";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=4";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=4";
+import { mountRaceSim } from "./modes/race-sim.js?v=4";
+import { mountFlashcards } from "./modes/flashcards.js?v=4";
 
 const STORAGE_KEY = "osquest_progress_v1";
 const READINGS_KEY = "osquest_readings_v1";
@@ -182,10 +182,15 @@ function renderHub() {
 function renderReadings() {
   clearRoot();
 
+  const header = document.createElement("div");
+  header.className = "module-header";
+  header.innerHTML = `<button class="back-btn">&larr; Topics</button><h2>📖 Readings & Review Guide</h2>`;
+  header.querySelector(".back-btn").addEventListener("click", () => navigate(""));
+  root.appendChild(header);
+
   const intro = document.createElement("div");
   intro.className = "hub-intro";
   intro.innerHTML = `
-    <h1>📖 Readings & Review Guide</h1>
     <p>Your own course materials, organized by topic, plus suggestions based on how you've actually been scoring — not just whether you clicked through something.</p>
   `;
   root.appendChild(intro);

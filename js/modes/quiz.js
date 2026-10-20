@@ -1,4 +1,4 @@
-import { prepareQuestions } from "./util.js?v=3";
+import { prepareQuestions } from "./util.js?v=4";
 
 // Multiple-choice quiz mode.
 // block: { id, title, sampleSize?, questions: [{ q, options: string[], correctIndex, explain }] }
