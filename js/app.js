@@ -8,25 +8,41 @@ import { mountRaceSim } from "./modes/race-sim.js";
 import { mountFlashcards } from "./modes/flashcards.js";
 
 const STORAGE_KEY = "osquest_progress_v1";
+const READINGS_KEY = "osquest_readings_v1";
 const root = document.getElementById("view-root");
 
-function loadProgress() {
+function loadJSON(key) {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    return JSON.parse(localStorage.getItem(key)) || {};
   } catch {
     return {};
   }
 }
 
-function saveProgress(progress) {
+function saveJSON(key, value) {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+    localStorage.setItem(key, JSON.stringify(value));
   } catch {
     /* ignore (e.g. private browsing storage quota) */
   }
 }
 
+function loadProgress() {
+  return loadJSON(STORAGE_KEY);
+}
+
+function saveProgress(progress) {
+  saveJSON(STORAGE_KEY, progress);
+}
+
 let progress = loadProgress();
+let readingsDone = loadJSON(READINGS_KEY);
+
+function toggleReadingDone(topicId, idx) {
+  readingsDone[topicId] = readingsDone[topicId] || {};
+  readingsDone[topicId][idx] = !readingsDone[topicId][idx];
+  saveJSON(READINGS_KEY, readingsDone);
+}
 
 function markBlockDone(topicId, blockId, meta = {}) {
   progress[topicId] = progress[topicId] || {};
@@ -52,6 +68,55 @@ function overallProgress() {
     total += p.total;
   }
   return { done, total };
+}
+
+// Turn a block's recorded completion meta into a 0-100 mastery percentage.
+function blockPercent(block, meta) {
+  if (!meta) return null;
+  switch (block.type) {
+    case "quiz":
+    case "scheduler-sim":
+    case "scheduler-practice":
+      return meta.total ? (meta.score / meta.total) * 100 : null;
+    case "flashcards":
+      return meta.total ? (meta.known / meta.total) * 100 : null;
+    case "ordering":
+      return meta.total ? (meta.correctCount / meta.total) * 100 : null;
+    case "matching":
+      return meta.total != null ? (meta.total / (meta.total + (meta.mistakes || 0))) * 100 : null;
+    case "race-sim":
+      return meta.correct ? 100 : 0;
+    default:
+      return null;
+  }
+}
+
+function topicMastery(topic) {
+  const tp = progress[topic.id] || {};
+  let sum = 0;
+  let count = 0;
+  const weak = [];
+  const unattempted = [];
+  topic.blocks.forEach((b) => {
+    const meta = tp[b.id];
+    if (!meta) {
+      unattempted.push(b);
+      return;
+    }
+    const pct = blockPercent(b, meta);
+    if (pct == null) return;
+    sum += pct;
+    count++;
+    if (pct < 70) weak.push({ block: b, pct });
+  });
+  return { avg: count ? sum / count : null, attempted: count, totalBlocks: topic.blocks.length, weak, unattempted };
+}
+
+function masteryBadge(mastery) {
+  if (mastery.attempted === 0) return { cls: "neutral", label: "Not started" };
+  if (mastery.avg < 60) return { cls: "bad", label: `Needs review — ${Math.round(mastery.avg)}%` };
+  if (mastery.avg < 85) return { cls: "warn", label: `Keep practicing — ${Math.round(mastery.avg)}%` };
+  return { cls: "good", label: `Solid — ${Math.round(mastery.avg)}%` };
 }
 
 function navigate(view) {
@@ -112,6 +177,95 @@ function renderHub() {
   });
 
   root.appendChild(grid);
+}
+
+function renderReadings() {
+  clearRoot();
+
+  const intro = document.createElement("div");
+  intro.className = "hub-intro";
+  intro.innerHTML = `
+    <h1>📖 Readings & Review Guide</h1>
+    <p>Your own course materials, organized by topic, plus suggestions based on how you've actually been scoring — not just whether you clicked through something.</p>
+  `;
+  root.appendChild(intro);
+
+  TOPICS.forEach((topic) => {
+    const mastery = topicMastery(topic);
+    const badge = masteryBadge(mastery);
+
+    const card = document.createElement("div");
+    card.className = "readings-card";
+
+    const head = document.createElement("div");
+    head.className = "readings-card-head";
+    head.innerHTML = `
+      <h3>${topic.icon} ${topic.title}</h3>
+      <span class="mastery-badge ${badge.cls}">${badge.label}</span>
+    `;
+    card.appendChild(head);
+
+    if (topic.readings?.length) {
+      const list = document.createElement("ul");
+      list.className = "reading-list";
+      topic.readings.forEach((r, idx) => {
+        const done = Boolean(readingsDone[topic.id]?.[idx]);
+        const li = document.createElement("li");
+        li.className = `reading-item ${done ? "read" : ""}`;
+        const cbId = `read-${topic.id}-${idx}`;
+        li.innerHTML = `
+          <input type="checkbox" id="${cbId}" ${done ? "checked" : ""} />
+          <label for="${cbId}">${r.title} <span class="reading-file">(${r.file})</span></label>
+        `;
+        li.querySelector("input").addEventListener("change", () => {
+          toggleReadingDone(topic.id, idx);
+          renderReadings();
+        });
+        list.appendChild(li);
+      });
+      card.appendChild(list);
+    }
+
+    if (mastery.attempted === 0) {
+      const box = document.createElement("div");
+      box.className = "suggestions-box";
+      box.innerHTML = `<h4>Suggestion</h4>`;
+      const btn = document.createElement("button");
+      btn.className = "suggestion-item";
+      btn.textContent = `Start with ${topic.title} →`;
+      btn.addEventListener("click", () => navigate(`topic/${topic.id}`));
+      box.appendChild(btn);
+      card.appendChild(box);
+    } else if (mastery.weak.length > 0 || mastery.unattempted.length > 0) {
+      const box = document.createElement("div");
+      box.className = "suggestions-box";
+      box.innerHTML = `<h4>Revisit the reading above, then retry</h4>`;
+      mastery.weak
+        .sort((a, b) => a.pct - b.pct)
+        .forEach(({ block, pct }) => {
+          const btn = document.createElement("button");
+          btn.className = "suggestion-item";
+          btn.textContent = `↻ ${block.title} — ${Math.round(pct)}%`;
+          btn.addEventListener("click", () => navigate(`topic/${topic.id}/${block.id}`));
+          box.appendChild(btn);
+        });
+      mastery.unattempted.forEach((block) => {
+        const btn = document.createElement("button");
+        btn.className = "suggestion-item";
+        btn.textContent = `• Not tried yet: ${block.title}`;
+        btn.addEventListener("click", () => navigate(`topic/${topic.id}/${block.id}`));
+        box.appendChild(btn);
+      });
+      card.appendChild(box);
+    } else {
+      const box = document.createElement("div");
+      box.className = "suggestions-box ok";
+      box.innerHTML = `<h4>You're solid here</h4><div style="color:var(--text-dim); font-size:0.88rem;">Every activity in this topic is averaging 70%+. Keep it up, or jump into Random Practice for more reps.</div>`;
+      card.appendChild(box);
+    }
+
+    root.appendChild(card);
+  });
 }
 
 function blockLabel(type) {
@@ -210,6 +364,8 @@ function router() {
     renderBlock(parts[1], parts[2]);
   } else if (parts[0] === "topic" && parts[1]) {
     renderTopic(parts[1]);
+  } else if (parts[0] === "readings") {
+    renderReadings();
   } else {
     renderHub();
   }
@@ -219,6 +375,8 @@ function router() {
 window.addEventListener("hashchange", router);
 document.addEventListener("DOMContentLoaded", router);
 if (document.readyState !== "loading") router();
+
+document.getElementById("btn-readings").addEventListener("click", () => navigate("readings"));
 
 document.getElementById("btn-reset-progress").addEventListener("click", () => {
   if (confirm("Reset all progress? This can't be undone.")) {

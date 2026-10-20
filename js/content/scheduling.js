@@ -3,6 +3,12 @@ export default {
   icon: "📊",
   title: "CPU Scheduling & MLFQ",
   description: "Scheduling policies — FCFS, SJF, STCF, Round Robin — and the Multi-Level Feedback Queue, with the course's own worked examples.",
+  readings: [
+    { title: "CPU API", file: "cpu-api.pdf" },
+    { title: "CPU Scheduling: MLFQ", file: "cpu-sched-mlfq.pdf" },
+    { title: "Lecture 4 — Scheduling (PreClass)", file: "TCSS 422 Lecture 4 Scheduling - PreClass.pptx" },
+    { title: "Lecture 4 — Scheduling (AfterClass)", file: "TCSS 422 Lecture 4 Scheduling - AfterClass.pptx" },
+  ],
   blocks: [
     {
       type: "flashcards",

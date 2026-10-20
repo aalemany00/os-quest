@@ -3,6 +3,10 @@ export default {
   icon: "🔁",
   title: "Limited Direct Execution",
   description: "How the OS virtualizes the CPU efficiently and safely: direct execution, traps, and context switches.",
+  readings: [
+    { title: "Lecture 3 — Limited Direct Execution (PreClass)", file: "TCSS 422 Lecture 3 LDE - PreClass.pptx" },
+    { title: "Lecture 3 — Limited Direct Execution (AfterClass)", file: "TCSS 422 Lecture 3 LDE - AfterClass.pptx" },
+  ],
   blocks: [
     {
       type: "flashcards",
