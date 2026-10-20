@@ -1,11 +1,11 @@
-import { TOPICS } from "./content/index.js?v=4";
-import { mountQuiz } from "./modes/quiz.js?v=4";
-import { mountOrdering } from "./modes/ordering.js?v=4";
-import { mountMatching } from "./modes/matching.js?v=4";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=4";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=4";
-import { mountRaceSim } from "./modes/race-sim.js?v=4";
-import { mountFlashcards } from "./modes/flashcards.js?v=4";
+import { TOPICS } from "./content/index.js?v=6";
+import { mountQuiz } from "./modes/quiz.js?v=6";
+import { mountOrdering } from "./modes/ordering.js?v=6";
+import { mountMatching } from "./modes/matching.js?v=6";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=6";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=6";
+import { mountRaceSim } from "./modes/race-sim.js?v=6";
+import { mountFlashcards } from "./modes/flashcards.js?v=6";
 
 const STORAGE_KEY = "osquest_progress_v1";
 const READINGS_KEY = "osquest_readings_v1";
@@ -184,7 +184,7 @@ function renderReadings() {
 
   const header = document.createElement("div");
   header.className = "module-header";
-  header.innerHTML = `<button class="back-btn">&larr; Topics</button><h2>📖 Readings & Review Guide</h2>`;
+  header.innerHTML = `<button class="back-btn">&lt;&lt; Topics</button><h2>📖 Readings & Review Guide</h2>`;
   header.querySelector(".back-btn").addEventListener("click", () => navigate(""));
   root.appendChild(header);
 
@@ -324,7 +324,7 @@ function renderTopic(topicId) {
 
   const header = document.createElement("div");
   header.className = "module-header";
-  header.innerHTML = `<button class="back-btn">&larr; Topics</button><h2>${topic.icon} ${topic.title}</h2>`;
+  header.innerHTML = `<button class="back-btn">&lt;&lt; Topics</button><h2>${topic.icon} ${topic.title}</h2>`;
   header.querySelector(".back-btn").addEventListener("click", () => navigate(""));
   root.appendChild(header);
 
@@ -373,7 +373,7 @@ function renderNotes(topicId) {
 
   const header = document.createElement("div");
   header.className = "module-header";
-  header.innerHTML = `<button class="back-btn">&larr; ${topic.title}</button><h2>📖 ${topic.title} — Study Notes</h2>`;
+  header.innerHTML = `<button class="back-btn">&lt;&lt; ${topic.title}</button><h2>📖 ${topic.title} — Study Notes</h2>`;
   header.querySelector(".back-btn").addEventListener("click", () => navigate(`topic/${topic.id}`));
   root.appendChild(header);
 
@@ -416,7 +416,7 @@ function renderBlock(topicId, blockId) {
 
   const header = document.createElement("div");
   header.className = "module-header";
-  header.innerHTML = `<button class="back-btn">&larr; ${topic.title}</button><h2>${block.title}</h2>`;
+  header.innerHTML = `<button class="back-btn">&lt;&lt; ${topic.title}</button><h2>${block.title}</h2>`;
   header.querySelector(".back-btn").addEventListener("click", () => navigate(`topic/${topic.id}`));
   root.appendChild(header);
 

@@ -1,10 +1,10 @@
-import { runSchedule } from "../engine/scheduler.js?v=4";
-import { shuffle } from "./util.js?v=4";
+import { runSchedule } from "../engine/scheduler.js?v=6";
+import { shuffle } from "./util.js?v=6";
 
 // block: { id, title, algorithm, quantum?, mlfq?, jobs: [{name, arrival, burst}],
 //          intro?: string, questions: [{ metric: 'completion'|'turnaround'|'response'|'waiting', job, options, correctIndex }] }
 
-const COLORS = ["#5ee6c4", "#ffc864", "#ff8bb3", "#8ab4ff", "#c792ea", "#7fe0ff"];
+const COLORS = ["#00f6ff", "#ff2fb0", "#ffd23f", "#39ff6a", "#b14bff", "#ff8a2b"];
 
 function colorFor(jobs, name) {
   const idx = jobs.findIndex((j) => j.name === name);

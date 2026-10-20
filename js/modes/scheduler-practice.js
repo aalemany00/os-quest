@@ -1,5 +1,5 @@
-import { runSchedule } from "../engine/scheduler.js?v=4";
-import { shuffle } from "./util.js?v=4";
+import { runSchedule } from "../engine/scheduler.js?v=6";
+import { shuffle } from "./util.js?v=6";
 
 // Infinite randomized scheduling practice: a fresh set of jobs (and often a fresh
 // algorithm) every round, with the ground truth always computed by the real
@@ -7,7 +7,7 @@ import { shuffle } from "./util.js?v=4";
 // block: { id, title, intro?, algorithms: string[], jobCount:[min,max], burstRange:[min,max],
 //          arrivalSpread?, quantumRange?:[min,max], mlfqQuantums?, rounds? }
 
-const COLORS = ["#5ee6c4", "#ffc864", "#ff8bb3", "#8ab4ff", "#c792ea", "#7fe0ff"];
+const COLORS = ["#00f6ff", "#ff2fb0", "#ffd23f", "#39ff6a", "#b14bff", "#ff8a2b"];
 
 function randInt(min, max) {
   return min + Math.floor(Math.random() * (max - min + 1));
