@@ -1,11 +1,11 @@
-import { TOPICS } from "./content/index.js?v=11";
-import { mountQuiz } from "./modes/quiz.js?v=11";
-import { mountOrdering } from "./modes/ordering.js?v=11";
-import { mountMatching } from "./modes/matching.js?v=11";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=11";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=11";
-import { mountRaceSim } from "./modes/race-sim.js?v=11";
-import { mountFlashcards } from "./modes/flashcards.js?v=11";
+import { TOPICS } from "./content/index.js?v=12";
+import { mountQuiz } from "./modes/quiz.js?v=12";
+import { mountOrdering } from "./modes/ordering.js?v=12";
+import { mountMatching } from "./modes/matching.js?v=12";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=12";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=12";
+import { mountRaceSim } from "./modes/race-sim.js?v=12";
+import { mountFlashcards } from "./modes/flashcards.js?v=12";
 
 // Legacy (pre-profile) single-user keys — migrated into the first profile created
 // on a given device, so nobody loses progress when this feature rolls out.
@@ -131,6 +131,55 @@ function signOutProfile() {
   saveJSON(ACTIVE_PROFILE_KEY, null);
   progress = {};
   readingsDone = {};
+}
+
+// Export/Import is how a save follows a specific person across devices: there's no
+// server here to "log in" to, so the save file itself — carrying the profile's real
+// id, not just its display name — is what proves it's the same person's data.
+function exportProfile(id) {
+  const p = profiles.find((prof) => prof.id === id);
+  if (!p) return;
+  const payload = {
+    kind: "osquest-save",
+    version: 1,
+    id: p.id,
+    name: p.name,
+    exportedAt: new Date().toISOString(),
+    progress: loadJSON(progressKey(id), {}),
+    readingsDone: loadJSON(readingsKey(id), {}),
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const safeName = p.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+  a.download = `osquest-save-${safeName}-${payload.exportedAt.slice(0, 10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// Importing re-homes a profile on this device by its id: if a profile with that
+// exact id already exists here (you studying on a second device), its data is
+// overwritten with the imported save — a true continuation, not a name-based guess.
+// If this id has never been seen on this device, a new profile entry is created for
+// it (still using the original id), independent of any other locally-named profile.
+function importProfile(data) {
+  if (!data || data.kind !== "osquest-save" || !data.id || !data.name) {
+    alert("That doesn't look like a valid OS Quest save file.");
+    return;
+  }
+  const existing = profiles.find((p) => p.id === data.id);
+  if (existing) {
+    profiles = profiles.map((p) => (p.id === data.id ? { ...p, name: data.name } : p));
+  } else {
+    profiles = [...profiles, { id: data.id, name: data.name }];
+  }
+  saveJSON(PROFILES_KEY, profiles);
+  saveJSON(progressKey(data.id), data.progress ?? {});
+  saveJSON(readingsKey(data.id), data.readingsDone ?? {});
+  selectProfileById(data.id);
 }
 
 function deleteProfile(id) {
@@ -354,6 +403,33 @@ function renderProfileGate() {
     if (e.key === "Enter") go();
   });
   input.focus();
+
+  const importWrap = document.createElement("div");
+  importWrap.className = "mode-shell";
+  importWrap.style.marginTop = "16px";
+  importWrap.innerHTML = `
+    <h3>Studying on a different device?</h3>
+    <p style="color:var(--text-dim); font-size:1.05rem; margin-top:0;">If you've exported a save from another device (look for the 💾 Export button in the top bar there), load that file here to continue exactly where you left off.</p>
+    <div class="flex-row">
+      <input type="file" id="import-file-input" accept="application/json" />
+    </div>
+  `;
+  root.appendChild(importWrap);
+  importWrap.querySelector("#import-file-input").addEventListener("change", (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        importProfile(data);
+        navigate("");
+      } catch {
+        alert("Couldn't read that file — make sure it's an OS Quest save file (.json) exported from the Export button.");
+      }
+    };
+    reader.readAsText(file);
+  });
 }
 
 function renderHub() {
@@ -766,6 +842,12 @@ document.getElementById("btn-readings").addEventListener("click", () => navigate
 document.getElementById("btn-switch-user").addEventListener("click", () => {
   signOutProfile();
   router();
+});
+
+document.getElementById("btn-export").addEventListener("click", () => {
+  const p = activeProfile();
+  if (!p) return;
+  exportProfile(p.id);
 });
 
 document.getElementById("btn-reset-progress").addEventListener("click", () => {
