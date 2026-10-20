@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+*.log
+node_modules/
+
+# Copyrighted course materials (textbook chapters, lecture slides) — keep local only.
+/Learning Material/

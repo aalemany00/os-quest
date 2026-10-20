@@ -1,0 +1,155 @@
+export default {
+  id: "scheduling",
+  icon: "📊",
+  title: "CPU Scheduling & MLFQ",
+  description: "Scheduling policies — FIFO, SJF, STCF, Round Robin — and the Multi-Level Feedback Queue.",
+  blocks: [
+    {
+      type: "flashcards",
+      id: "sched-flash",
+      title: "Scheduling Vocabulary",
+      cards: [
+        { front: "Turnaround time", back: "completion time − arrival time. How long a job took from arrival until it finished, including any waiting." },
+        { front: "Response time", back: "The time from a job's arrival until it first gets scheduled on the CPU (first_run − arrival). Important for interactive workloads." },
+        { front: "FIFO / FCFS", back: "First In, First Out: jobs run in the order they arrive, to completion, with no preemption. Simple but suffers from the convoy effect (a short job stuck behind a long one)." },
+        { front: "SJF", back: "Shortest Job First: among available jobs, always run the one with the shortest total execution time next. Non-preemptive, so a long-running job that's already started still blocks shorter jobs that arrive later." },
+        { front: "STCF / SRTF", back: "Shortest Time-to-Completion First: the preemptive version of SJF — whenever a new job arrives, if it has less remaining time than the current job, preempt and switch to it." },
+        { front: "Round Robin (RR)", back: "Runs each ready job for a fixed time slice (the 'quantum'), then moves it to the back of the queue and runs the next one. Great for response time, worse for turnaround time than STCF." },
+        { front: "MLFQ", back: "Multi-Level Feedback Queue: multiple priority queues, each with its own time quantum. Jobs start at the highest priority; if they use their full time slice, they move down a queue. Approximates SJF/STCF without knowing job lengths in advance." },
+        { front: "Priority boost", back: "Periodically (every S time units) moving all jobs in an MLFQ back to the topmost queue, preventing starvation of long-running jobs and letting them re-earn priority." },
+      ],
+    },
+    {
+      type: "scheduler-sim",
+      id: "sched-fifo-sjf",
+      title: "FIFO vs SJF Trace",
+      algorithm: "FIFO",
+      intro: "Three jobs arrive at the same time (t=0) with different burst lengths.",
+      jobs: [
+        { name: "A", arrival: 0, burst: 10 },
+        { name: "B", arrival: 0, burst: 2 },
+        { name: "C", arrival: 0, burst: 2 },
+      ],
+      questions: [
+        { metric: "turnaround", job: "B", options: [2, 10, 12, 14], correctIndex: 2 },
+        { metric: "turnaround", job: "C", options: [2, 12, 14, 10], correctIndex: 2 },
+        { metric: "completion", job: "A", options: [2, 10, 12, 14], correctIndex: 1 },
+      ],
+    },
+    {
+      type: "scheduler-sim",
+      id: "sched-sjf-fix",
+      title: "SJF Fixes the Convoy Effect",
+      algorithm: "SJF",
+      intro: "Same three jobs as before, but now scheduled with SJF instead of FIFO — shortest jobs go first.",
+      jobs: [
+        { name: "A", arrival: 0, burst: 10 },
+        { name: "B", arrival: 0, burst: 2 },
+        { name: "C", arrival: 0, burst: 2 },
+      ],
+      questions: [
+        { metric: "turnaround", job: "B", options: [2, 4, 10, 14], correctIndex: 0 },
+        { metric: "turnaround", job: "A", options: [10, 12, 14, 4], correctIndex: 2 },
+      ],
+    },
+    {
+      type: "scheduler-sim",
+      id: "sched-stcf",
+      title: "STCF with a Late Arrival",
+      algorithm: "STCF",
+      intro: "Job A arrives first and is long. Shorter jobs B and C arrive a bit later — STCF preempts A for them.",
+      jobs: [
+        { name: "A", arrival: 0, burst: 10 },
+        { name: "B", arrival: 2, burst: 2 },
+        { name: "C", arrival: 4, burst: 2 },
+      ],
+      questions: [
+        { metric: "response", job: "B", options: [0, 2, 4, 10], correctIndex: 0 },
+        { metric: "turnaround", job: "A", options: [10, 12, 14, 8], correctIndex: 2 },
+      ],
+    },
+    {
+      type: "scheduler-sim",
+      id: "sched-rr",
+      title: "Round Robin Quantum = 1",
+      algorithm: "RR",
+      quantum: 1,
+      intro: "Three jobs of equal length, all arriving at t=0, scheduled Round Robin with a 1-time-unit quantum.",
+      jobs: [
+        { name: "A", arrival: 0, burst: 5 },
+        { name: "B", arrival: 0, burst: 5 },
+        { name: "C", arrival: 0, burst: 5 },
+      ],
+      questions: [
+        { metric: "response", job: "B", options: [0, 1, 2, 5], correctIndex: 1 },
+        { metric: "turnaround", job: "C", options: [5, 13, 15, 10], correctIndex: 2 },
+      ],
+    },
+    {
+      type: "scheduler-sim",
+      id: "sched-mlfq",
+      title: "MLFQ in Action",
+      algorithm: "MLFQ",
+      mlfq: { quantums: [2, 4, 8] },
+      intro: "A CPU-bound job (A) competes with a short interactive-like job (B) that arrives slightly later, across 3 MLFQ queues (quantums 2/4/8, no boost in this example).",
+      jobs: [
+        { name: "A", arrival: 0, burst: 20 },
+        { name: "B", arrival: 3, burst: 3 },
+      ],
+      questions: [
+        { metric: "response", job: "B", options: [0, 1, 3, 6], correctIndex: 0 },
+      ],
+    },
+    {
+      type: "quiz",
+      id: "sched-quiz",
+      title: "Scheduling Concepts Quiz",
+      questions: [
+        {
+          q: "What is the 'convoy effect' in FIFO scheduling?",
+          options: [
+            "Jobs run faster when grouped together",
+            "A number of relatively short jobs get stuck behind a long-running job, inflating their turnaround time",
+            "The CPU overheats from running too many jobs",
+            "Jobs convoy (group) by arrival time automatically",
+          ],
+          correctIndex: 1,
+          explain: "Because FIFO runs jobs to completion in arrival order, one long job at the front of the queue forces every short job behind it to wait much longer than necessary — like being stuck behind a slow vehicle.",
+        },
+        {
+          q: "Why is SJF alone not sufficient for a real, interactive system?",
+          options: [
+            "It requires knowing job lengths in advance, which the OS usually doesn't know",
+            "It always performs worse than FIFO",
+            "It cannot be implemented in software",
+            "It cannot handle more than 2 jobs",
+          ],
+          correctIndex: 0,
+          explain: "SJF (and STCF) need to know how long a job will run before scheduling it, which is generally unknowable in advance. MLFQ was designed to approximate SJF/STCF behavior by learning from past behavior instead of requiring foreknowledge.",
+        },
+        {
+          q: "In MLFQ, what happens when a job uses up its entire time allotment at its current queue level without finishing or giving up the CPU?",
+          options: [
+            "It is moved up to a higher-priority queue",
+            "It is terminated",
+            "Its priority is reduced — it moves down to a lower-priority queue",
+            "Nothing changes",
+          ],
+          correctIndex: 2,
+          explain: "This is a core MLFQ rule: using up your time slice at a level signals CPU-bound behavior, so the scheduler demotes the job to a lower-priority (longer quantum, less frequently scheduled) queue.",
+        },
+        {
+          q: "What problem does a periodic 'priority boost' solve in MLFQ?",
+          options: [
+            "It prevents long-running jobs from starving forever at the bottom queue once interactive jobs keep arriving",
+            "It makes the CPU run at a higher clock speed",
+            "It merges all queues into one",
+            "It immediately finishes all remaining jobs",
+          ],
+          correctIndex: 0,
+          explain: "Without a boost, a long CPU-bound job that has been demoted to the lowest queue could starve indefinitely if new short jobs keep arriving at the top queue. Periodically moving everyone back to the top queue guarantees forward progress.",
+        },
+      ],
+    },
+  ],
+};
