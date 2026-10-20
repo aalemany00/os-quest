@@ -4,9 +4,9 @@ export default {
   title: "Introduction to OS",
   description: "What an OS is, virtualization, concurrency, and persistence — the three big themes of the course.",
   readings: [
-    { title: "Introduction", file: "intro.pdf" },
-    { title: "Lecture 1 — Introduction (PreClass)", file: "TCSS 422 Lecture 1 Introduction - PreClass.pptx" },
-    { title: "Lecture 1 — Introduction (AfterClass)", file: "TCSS 422 Lecture 1 Introduction - AfterClass.pptx" },
+    { kind: "chapter", chapter: 2, title: "Introduction to Operating Systems", file: "intro.pdf" },
+    { kind: "slides", title: "Lecture 1 — Introduction (PreClass)", file: "TCSS 422 Lecture 1 Introduction - PreClass.pptx" },
+    { kind: "slides", title: "Lecture 1 — Introduction (AfterClass)", file: "TCSS 422 Lecture 1 Introduction - AfterClass.pptx" },
   ],
   blocks: [
     {

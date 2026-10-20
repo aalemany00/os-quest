@@ -4,8 +4,9 @@ export default {
   title: "Limited Direct Execution",
   description: "How the OS virtualizes the CPU efficiently and safely: direct execution, traps, and context switches.",
   readings: [
-    { title: "Lecture 3 — Limited Direct Execution (PreClass)", file: "TCSS 422 Lecture 3 LDE - PreClass.pptx" },
-    { title: "Lecture 3 — Limited Direct Execution (AfterClass)", file: "TCSS 422 Lecture 3 LDE - AfterClass.pptx" },
+    { kind: "slides", title: "Lecture 3 — Limited Direct Execution (PreClass)", file: "TCSS 422 Lecture 3 LDE - PreClass.pptx" },
+    { kind: "slides", title: "Lecture 3 — Limited Direct Execution (AfterClass)", file: "TCSS 422 Lecture 3 LDE - AfterClass.pptx" },
+    { kind: "missing", title: "OSTEP Chapter 6 — Mechanism: Limited Direct Execution (not in your Learning Material folder — add it if you have it)" },
   ],
   blocks: [
     {

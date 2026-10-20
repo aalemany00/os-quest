@@ -209,13 +209,27 @@ function renderReadings() {
       const list = document.createElement("ul");
       list.className = "reading-list";
       topic.readings.forEach((r, idx) => {
-        const done = Boolean(readingsDone[topic.id]?.[idx]);
         const li = document.createElement("li");
+
+        if (r.kind === "missing") {
+          li.className = "reading-item missing";
+          li.innerHTML = `<span class="reading-kind-tag">⚠ missing</span><span>${r.title}</span>`;
+          list.appendChild(li);
+          return;
+        }
+
+        const done = Boolean(readingsDone[topic.id]?.[idx]);
         li.className = `reading-item ${done ? "read" : ""}`;
         const cbId = `read-${topic.id}-${idx}`;
+        const kindTag = {
+          chapter: `📄 Ch. ${r.chapter}`,
+          slides: "🖥 slides",
+          code: "💻 code",
+          handout: "📋 handout",
+        }[r.kind] ?? "";
         li.innerHTML = `
           <input type="checkbox" id="${cbId}" ${done ? "checked" : ""} />
-          <label for="${cbId}">${r.title} <span class="reading-file">(${r.file})</span></label>
+          <label for="${cbId}">${kindTag ? `<span class="reading-kind-tag">${kindTag}</span> ` : ""}${r.title} <span class="reading-file">(${r.file})</span></label>
         `;
         li.querySelector("input").addEventListener("change", () => {
           toggleReadingDone(topic.id, idx);

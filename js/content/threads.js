@@ -4,10 +4,10 @@ export default {
   title: "Threads & Concurrency",
   description: "Creating threads with pthreads, the exact instruction-level race condition, and using locks/condition variables correctly.",
   readings: [
-    { title: "Concurrency and Threads", file: "threads-intro.pdf" },
-    { title: "Thread API", file: "threads-api.pdf" },
-    { title: "Lecture 5 — Threads & Concurrency (PreClass)", file: "TCSS 422 Lecture 5 Threads & Concurrency - PreClass.pptx" },
-    { title: "Sample Codes of Lecture 5 (pthread.c, pthread_create.c)", file: "Sample Codes of Lecture 5/" },
+    { kind: "chapter", chapter: 26, title: "Concurrency: An Introduction", file: "threads-intro.pdf" },
+    { kind: "chapter", chapter: 27, title: "Interlude: Thread API", file: "threads-api.pdf" },
+    { kind: "slides", title: "Lecture 5 — Threads & Concurrency (PreClass)", file: "TCSS 422 Lecture 5 Threads & Concurrency - PreClass.pptx" },
+    { kind: "code", title: "Sample Codes of Lecture 5 (pthread.c, pthread_create.c)", file: "Sample Codes of Lecture 5/" },
   ],
   blocks: [
     {

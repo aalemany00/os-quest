@@ -467,6 +467,24 @@ html, body {
   font-family: "SF Mono", Consolas, monospace;
 }
 .reading-item.read label { text-decoration: line-through; color: var(--text-dim); }
+.reading-item.missing {
+  color: var(--text-dim);
+  font-style: italic;
+  opacity: 0.85;
+  display: flex;
+  gap: 8px;
+}
+.reading-kind-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(94,230,196,0.1);
+  border-radius: 6px;
+  padding: 1px 6px;
+  margin-right: 2px;
+  white-space: nowrap;
+}
 
 .suggestions-box {
   background: var(--bg-elevated);

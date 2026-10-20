@@ -4,11 +4,12 @@ export default {
   title: "Processes",
   description: "What a process is, its states, how the OS creates one, and the fork/exec/wait API used to control them.",
   readings: [
-    { title: "Processes", file: "cpu-intro.pdf" },
-    { title: "Lecture 2 — Processes (PreClass)", file: "TCSS 422 Lecture 2 Processes - PreClass.pptx" },
-    { title: "Lecture 2 — Processes (AfterClass)", file: "TCSS 422 Lecture 2 Processes - AfterClass.pptx" },
-    { title: "Sample Codes of Lecture 2 (p1.c, p2.c, p3.c)", file: "Sample Codes of Lecture 2/" },
-    { title: "Lectures 1-2 Review Exercise", file: "TCSS422_Lectures1-2_Review_Exercise.pdf" },
+    { kind: "chapter", chapter: 4, title: "The Abstraction: The Process", file: "cpu-intro.pdf" },
+    { kind: "chapter", chapter: 5, title: "Interlude: Process API", file: "cpu-api.pdf" },
+    { kind: "slides", title: "Lecture 2 — Processes (PreClass)", file: "TCSS 422 Lecture 2 Processes - PreClass.pptx" },
+    { kind: "slides", title: "Lecture 2 — Processes (AfterClass)", file: "TCSS 422 Lecture 2 Processes - AfterClass.pptx" },
+    { kind: "code", title: "Sample Codes of Lecture 2 (p1.c, p2.c, p3.c)", file: "Sample Codes of Lecture 2/" },
+    { kind: "handout", title: "Lectures 1-2 Review Exercise", file: "TCSS422_Lectures1-2_Review_Exercise.pdf" },
   ],
   blocks: [
     {

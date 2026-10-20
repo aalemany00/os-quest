@@ -4,8 +4,8 @@ export default {
   title: "C Programming Basics",
   description: "Pointers, strings, and the argv-manipulation exercise from the Quiz 1 C Tutorial, building toward execvp().",
   readings: [
-    { title: "Quiz 1 — C Tutorial", file: "Quiz 1/TCSS 422 Quiz 1 C Tutorial.pdf" },
-    { title: "Sample Codes of Lecture 1 (cpu.c, io.c, mem.c, threads.c, common.h)", file: "Sample Codes of Lecture 1/" },
+    { kind: "handout", title: "Quiz 1 — C Tutorial", file: "Quiz 1/TCSS 422 Quiz 1 C Tutorial.pdf" },
+    { kind: "code", title: "Sample Codes of Lecture 1 (cpu.c, io.c, mem.c, threads.c, common.h)", file: "Sample Codes of Lecture 1/" },
   ],
   blocks: [
     {
