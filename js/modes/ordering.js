@@ -1,3 +1,5 @@
+import { renderStreakStatus } from "./util.js?v=7";
+
 // Step-ordering puzzle. Works well on touch via up/down buttons (no drag-and-drop needed).
 // block: { id, title, prompt, steps: string[] in correct order }
 
@@ -82,14 +84,15 @@ export function mountOrdering(root, block, ctx) {
         const correctCount = current.filter((s, idx) => s === correctOrder[idx]).length;
         const allCorrect = correctCount === correctOrder.length;
         render();
-        const banner = document.createElement("div");
-        banner.className = `result-banner ${allCorrect ? "success" : "fail"}`;
-        banner.textContent = allCorrect
+        const scoreLine = document.createElement("div");
+        scoreLine.className = "mode-progress";
+        scoreLine.textContent = allCorrect
           ? "Correct order!"
           : `${correctCount} / ${correctOrder.length} steps in the right position.`;
-        root.insertBefore(banner, list);
+        root.appendChild(scoreLine);
 
-        ctx.onComplete({ correctCount, total: correctOrder.length, allCorrect });
+        const status = ctx.onComplete({ correctCount, total: correctOrder.length, allCorrect });
+        root.appendChild(renderStreakStatus(status));
 
         const row = document.createElement("div");
         row.className = "flex-row";

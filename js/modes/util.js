@@ -27,3 +27,18 @@ export function prepareQuestions(questions, sampleSize) {
   if (sampleSize && pool.length > sampleSize) pool = pool.slice(0, sampleSize);
   return pool.map(shuffleQuestion);
 }
+
+// Builds the "streak" status element every mode shows after ctx.onComplete() returns —
+// mastery requires several fully-correct runs in a row, not just one.
+export function renderStreakStatus(status) {
+  const div = document.createElement("div");
+  div.className = "result-banner " + (status.done ? "success" : status.pass ? "streak" : "fail");
+  if (status.done) {
+    div.textContent = `🏆 Mastered! ${status.required}/${status.required} perfect runs in a row.`;
+  } else if (status.pass) {
+    div.textContent = `✅ Perfect run! Streak ${status.streak}/${status.required} — do it again to lock it in.`;
+  } else if (status.streak === 0 && status.pass === false) {
+    div.textContent = `Not quite 100% — streak reset. Get ${status.required} fully-correct runs in a row to master this.`;
+  }
+  return div;
+}

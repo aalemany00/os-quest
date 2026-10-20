@@ -1,3 +1,5 @@
+import { renderStreakStatus } from "./util.js?v=7";
+
 // Concurrency / race-condition interleaving stepper + prediction quiz.
 // block: {
 //   id, title, intro?,
@@ -10,6 +12,8 @@
 export function mountRaceSim(root, block, ctx) {
   let step = -1; // -1 = not started
   let answered = false;
+  let selectedIdx = null;
+  let lastStatus = null;
 
   function render() {
     root.innerHTML = "";
@@ -96,19 +100,16 @@ export function mountRaceSim(root, block, ctx) {
       const btn = document.createElement("button");
       btn.className = "quiz-option";
       btn.textContent = String(opt);
-      if (answered) btn.classList.add("disabled");
-      if (answered && idx === block.correctIndex) btn.classList.add("correct");
+      if (answered) {
+        btn.classList.add("disabled");
+        if (idx === block.correctIndex) btn.classList.add("correct");
+        else if (idx === selectedIdx) btn.classList.add("incorrect");
+      }
       btn.addEventListener("click", () => {
         if (answered) return;
         answered = true;
-        const correct = idx === block.correctIndex;
-        render();
-        setTimeout(() => {
-          const opts = root.querySelectorAll(".quiz-option");
-          opts[idx].classList.add(correct ? "correct" : "incorrect");
-          if (!correct) opts[block.correctIndex].classList.add("correct");
-        }, 0);
-        finish(correct);
+        selectedIdx = idx;
+        finish(idx === block.correctIndex);
       });
       optsEl.appendChild(btn);
     });
@@ -120,19 +121,38 @@ export function mountRaceSim(root, block, ctx) {
       root.appendChild(ex);
     }
 
-    if (answered) {
+    if (answered && lastStatus) {
+      root.appendChild(renderStreakStatus(lastStatus));
+
+      const row = document.createElement("div");
+      row.className = "flex-row";
+      const retry = document.createElement("button");
+      retry.className = "btn secondary";
+      retry.textContent = "Try again";
+      retry.addEventListener("click", () => {
+        step = -1;
+        answered = false;
+        selectedIdx = null;
+        lastStatus = null;
+        render();
+      });
       const back = document.createElement("button");
       back.className = "btn";
-      back.style.marginTop = "12px";
       back.textContent = "Back to topic";
       back.addEventListener("click", ctx.goBackToTopic);
-      root.appendChild(back);
+      row.appendChild(retry);
+      row.appendChild(back);
+      root.appendChild(row);
     }
   }
 
   function finish(correct) {
-    ctx.onComplete({ correct });
+    lastStatus = ctx.onComplete({ correct });
+    render();
   }
+
+  // (finish() re-renders once, synchronously — no setTimeout hacks needed since
+  // the option styling above already derives from `answered`/`selectedIdx` state.)
 
   render();
 }

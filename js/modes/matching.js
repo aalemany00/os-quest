@@ -1,3 +1,5 @@
+import { renderStreakStatus } from "./util.js?v=7";
+
 // Term <-> definition matching mode.
 // block: { id, title, pairs: [{ term, def }] }
 
@@ -86,12 +88,13 @@ export function mountMatching(root, block, ctx) {
 
   function finish() {
     root.innerHTML = "";
-    const banner = document.createElement("div");
-    banner.className = "result-banner success";
-    banner.textContent = `All matched! Mistakes: ${mistakes}`;
-    root.appendChild(banner);
+    const scoreLine = document.createElement("div");
+    scoreLine.className = "mode-progress";
+    scoreLine.textContent = `All matched! Mistakes: ${mistakes}`;
+    root.appendChild(scoreLine);
 
-    ctx.onComplete({ mistakes, total: pairs.length });
+    const status = ctx.onComplete({ mistakes, total: pairs.length });
+    root.appendChild(renderStreakStatus(status));
 
     const row = document.createElement("div");
     row.className = "flex-row";

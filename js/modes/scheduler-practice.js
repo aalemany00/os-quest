@@ -1,5 +1,5 @@
-import { runSchedule } from "../engine/scheduler.js?v=6";
-import { shuffle } from "./util.js?v=6";
+import { runSchedule } from "../engine/scheduler.js?v=7";
+import { shuffle, renderStreakStatus } from "./util.js?v=7";
 
 // Infinite randomized scheduling practice: a fresh set of jobs (and often a fresh
 // algorithm) every round, with the ground truth always computed by the real
@@ -185,12 +185,13 @@ export function mountSchedulerPractice(root, block, ctx) {
   function finish() {
     root.innerHTML = "";
     const pct = Math.round((score / totalRounds) * 100);
-    const banner = document.createElement("div");
-    banner.className = `result-banner ${pct >= 70 ? "success" : "fail"}`;
-    banner.textContent = `You scored ${score} / ${totalRounds} (${pct}%)`;
-    root.appendChild(banner);
+    const scoreLine = document.createElement("div");
+    scoreLine.className = "mode-progress";
+    scoreLine.textContent = `You scored ${score} / ${totalRounds} (${pct}%)`;
+    root.appendChild(scoreLine);
 
-    ctx.onComplete({ score, total: totalRounds });
+    const status = ctx.onComplete({ score, total: totalRounds });
+    root.appendChild(renderStreakStatus(status));
 
     const row = document.createElement("div");
     row.className = "flex-row";

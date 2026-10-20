@@ -306,6 +306,8 @@ body::before {
   color: var(--text-dim);
 }
 .block-row .block-status.done { color: var(--good); text-shadow: 0 0 6px var(--good); }
+.block-row .block-status.streak { color: var(--warn); }
+.block-row .block-status.retry { color: var(--text-dim); }
 
 /* ---------- Game mode shared ---------- */
 .mode-shell {
@@ -533,6 +535,7 @@ body::before {
 }
 .result-banner.success { background: rgba(57,255,106,0.12); color: var(--good); border-color: var(--good); text-shadow: 0 0 8px var(--good); }
 .result-banner.fail { background: rgba(255,56,100,0.12); color: var(--danger); border-color: var(--danger); }
+.result-banner.streak { background: rgba(255,210,63,0.12); color: var(--warn); border-color: var(--warn); }
 
 .flex-row { display: flex; gap: 10px; flex-wrap: wrap; }
 

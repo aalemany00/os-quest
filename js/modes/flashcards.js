@@ -1,3 +1,5 @@
+import { renderStreakStatus } from "./util.js?v=7";
+
 // Flashcard mode — flip to reveal, self-rate known/unknown.
 // block: { id, title, cards: [{ front, back }] }
 
@@ -81,12 +83,13 @@ export function mountFlashcards(root, block, ctx) {
   function finish() {
     root.innerHTML = "";
     const pct = Math.round((known / total) * 100);
-    const banner = document.createElement("div");
-    banner.className = `result-banner ${pct >= 70 ? "success" : "fail"}`;
-    banner.textContent = `You knew ${known} / ${total} cards (${pct}%)`;
-    root.appendChild(banner);
+    const scoreLine = document.createElement("div");
+    scoreLine.className = "mode-progress";
+    scoreLine.textContent = `You knew ${known} / ${total} cards (${pct}%)`;
+    root.appendChild(scoreLine);
 
-    ctx.onComplete({ known, total });
+    const status = ctx.onComplete({ known, total });
+    root.appendChild(renderStreakStatus(status));
 
     const row = document.createElement("div");
     row.className = "flex-row";

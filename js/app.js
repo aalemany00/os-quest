@@ -1,14 +1,15 @@
-import { TOPICS } from "./content/index.js?v=6";
-import { mountQuiz } from "./modes/quiz.js?v=6";
-import { mountOrdering } from "./modes/ordering.js?v=6";
-import { mountMatching } from "./modes/matching.js?v=6";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=6";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=6";
-import { mountRaceSim } from "./modes/race-sim.js?v=6";
-import { mountFlashcards } from "./modes/flashcards.js?v=6";
+import { TOPICS } from "./content/index.js?v=7";
+import { mountQuiz } from "./modes/quiz.js?v=7";
+import { mountOrdering } from "./modes/ordering.js?v=7";
+import { mountMatching } from "./modes/matching.js?v=7";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=7";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=7";
+import { mountRaceSim } from "./modes/race-sim.js?v=7";
+import { mountFlashcards } from "./modes/flashcards.js?v=7";
 
-const STORAGE_KEY = "osquest_progress_v1";
+const STORAGE_KEY = "osquest_progress_v2";
 const READINGS_KEY = "osquest_readings_v1";
+const DEFAULT_STREAK = 3;
 const root = document.getElementById("view-root");
 
 function loadJSON(key) {
@@ -44,14 +45,49 @@ function toggleReadingDone(topicId, idx) {
   saveJSON(READINGS_KEY, readingsDone);
 }
 
-function markBlockDone(topicId, blockId, meta = {}) {
-  progress[topicId] = progress[topicId] || {};
-  progress[topicId][blockId] = { done: true, ...meta };
+// A "pass" is a fully-correct attempt — the bar for counting toward mastery.
+function blockPass(block, meta = {}) {
+  switch (block.type) {
+    case "quiz":
+    case "scheduler-sim":
+    case "scheduler-practice":
+      return Boolean(meta.total) && meta.score === meta.total;
+    case "flashcards":
+      return Boolean(meta.total) && meta.known === meta.total;
+    case "ordering":
+      return Boolean(meta.allCorrect);
+    case "matching":
+      return (meta.mistakes ?? 0) === 0;
+    case "race-sim":
+      return Boolean(meta.correct);
+    default:
+      return false;
+  }
+}
+
+// Recording an attempt updates a streak of consecutive fully-correct passes;
+// a block only counts as "done" once that streak hits the required length —
+// a single lucky/complete run is not enough to call it mastered.
+function recordAttempt(topic, block, meta = {}) {
+  progress[topic.id] = progress[topic.id] || {};
+  const required = block.masteryStreak ?? DEFAULT_STREAK;
+  const pass = blockPass(block, meta);
+  const prev = progress[topic.id][block.id];
+  const streak = pass ? (prev?.streak ?? 0) + 1 : 0;
+  const done = streak >= required;
+  progress[topic.id][block.id] = { done, streak, required, pass, meta };
   saveProgress(progress);
+  return { done, streak, required, pass };
 }
 
 function isBlockDone(topicId, blockId) {
   return Boolean(progress[topicId]?.[blockId]?.done);
+}
+
+function blockStreakInfo(topicId, blockId) {
+  const entry = progress[topicId]?.[blockId];
+  if (!entry) return null;
+  return { streak: entry.streak ?? 0, required: entry.required ?? DEFAULT_STREAK, done: Boolean(entry.done) };
 }
 
 function topicProgressCount(topic) {
@@ -98,12 +134,12 @@ function topicMastery(topic) {
   const weak = [];
   const unattempted = [];
   topic.blocks.forEach((b) => {
-    const meta = tp[b.id];
-    if (!meta) {
+    const entry = tp[b.id];
+    if (!entry) {
       unattempted.push(b);
       return;
     }
-    const pct = blockPercent(b, meta);
+    const pct = blockPercent(b, entry.meta);
     if (pct == null) return;
     sum += pct;
     count++;
@@ -348,13 +384,27 @@ function renderTopic(topicId) {
   topic.blocks.forEach((block) => {
     const row = document.createElement("div");
     row.className = "block-row";
-    const done = isBlockDone(topic.id, block.id);
+    const info = blockStreakInfo(topic.id, block.id);
+    let statusText = "Not started";
+    let statusCls = "";
+    if (info) {
+      if (info.done) {
+        statusText = "🏆 Mastered";
+        statusCls = "done";
+      } else if (info.streak > 0) {
+        statusText = `Streak ${info.streak}/${info.required}`;
+        statusCls = "streak";
+      } else {
+        statusText = `Needs ${info.required} perfect in a row`;
+        statusCls = "retry";
+      }
+    }
     row.innerHTML = `
       <div>
         <div class="block-title">${block.title}</div>
         <div class="block-type">${blockLabel(block.type)}</div>
       </div>
-      <div class="block-status ${done ? "done" : ""}">${done ? "✓ Complete" : "Not started"}</div>
+      <div class="block-status ${statusCls}">${statusText}</div>
     `;
     row.addEventListener("click", () => navigate(`topic/${topic.id}/${block.id}`));
     list.appendChild(row);
@@ -425,7 +475,7 @@ function renderBlock(topicId, blockId) {
   root.appendChild(shell);
 
   const ctx = {
-    onComplete: (meta) => markBlockDone(topic.id, block.id, meta),
+    onComplete: (meta) => recordAttempt(topic, block, meta),
     goBackToTopic: () => navigate(`topic/${topic.id}`),
   };
 

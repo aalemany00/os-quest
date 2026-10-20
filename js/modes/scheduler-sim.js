@@ -1,5 +1,5 @@
-import { runSchedule } from "../engine/scheduler.js?v=6";
-import { shuffle } from "./util.js?v=6";
+import { runSchedule } from "../engine/scheduler.js?v=7";
+import { shuffle, renderStreakStatus } from "./util.js?v=7";
 
 // block: { id, title, algorithm, quantum?, mlfq?, jobs: [{name, arrival, burst}],
 //          intro?: string, questions: [{ metric: 'completion'|'turnaround'|'response'|'waiting', job, options, correctIndex }] }
@@ -166,12 +166,13 @@ export function mountSchedulerSim(root, block, ctx) {
   function finish() {
     root.innerHTML = "";
     const pct = Math.round((score / total) * 100);
-    const banner = document.createElement("div");
-    banner.className = `result-banner ${pct >= 70 ? "success" : "fail"}`;
-    banner.textContent = `You scored ${score} / ${total} (${pct}%)`;
-    root.appendChild(banner);
+    const scoreLine = document.createElement("div");
+    scoreLine.className = "mode-progress";
+    scoreLine.textContent = `You scored ${score} / ${total} (${pct}%)`;
+    root.appendChild(scoreLine);
 
-    ctx.onComplete({ score, total });
+    const status = ctx.onComplete({ score, total });
+    root.appendChild(renderStreakStatus(status));
 
     const row = document.createElement("div");
     row.className = "flex-row";
