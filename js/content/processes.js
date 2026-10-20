@@ -17,6 +17,14 @@ export default {
       body: "A program sitting on disk is inert — bytes and nothing more. A process is what the OS creates when it brings that program to life: an address space holding its code and data, a set of registers (including the program counter and stack pointer) describing exactly where execution is, and a list of open files. The OS tracks all of this in a Process Control Block (PCB) so it can pause a process and later resume it as if nothing happened — note that the PCB holds bookkeeping like saved registers and open files, but NOT the program's source code.",
     },
     {
+      heading: "Time sharing vs. space sharing (from the lecture slides)",
+      body: "The course draws a distinction between two ways the OS divides up a resource. Time sharing means one entity uses the whole resource for a while, then another entity gets a turn — the CPU and a network link both work this way. Space sharing means the resource is divided up all at once and everyone gets their own piece simultaneously — disk blocks are the slide's example. Processes are fundamentally a time-sharing abstraction: only one gets the CPU at any instant, but each gets a turn.",
+    },
+    {
+      heading: "How often does a context switch actually happen?",
+      body: "The lecture slides put a number on it: a context switch 'can happen 100 or 1000 times a second!' That's the scale at which the mechanism from the LDE topic has to be fast — if switching between processes took anywhere near as long as the time slice itself, the system would spend most of its time switching instead of doing useful work.",
+    },
+    {
       heading: "Three states, and only one path between two of them",
       body: "A process is Running (actively executing), Ready (able to run, just not currently scheduled), or Blocked (waiting on something, usually I/O, and literally unable to make progress until that something happens). The transitions have names: Running→Ready is 'descheduled,' Ready→Running is 'scheduled,' Running→Blocked is 'I/O: initiate,' and Blocked→Ready is 'I/O: done.' Notice there's no arrow straight from Blocked to Running — finishing I/O only makes a process eligible to run again; the scheduler still has to pick it.",
     },

@@ -1,11 +1,11 @@
-import { TOPICS } from "./content/index.js?v=8";
-import { mountQuiz } from "./modes/quiz.js?v=8";
-import { mountOrdering } from "./modes/ordering.js?v=8";
-import { mountMatching } from "./modes/matching.js?v=8";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=8";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=8";
-import { mountRaceSim } from "./modes/race-sim.js?v=8";
-import { mountFlashcards } from "./modes/flashcards.js?v=8";
+import { TOPICS } from "./content/index.js?v=9";
+import { mountQuiz } from "./modes/quiz.js?v=9";
+import { mountOrdering } from "./modes/ordering.js?v=9";
+import { mountMatching } from "./modes/matching.js?v=9";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=9";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=9";
+import { mountRaceSim } from "./modes/race-sim.js?v=9";
+import { mountFlashcards } from "./modes/flashcards.js?v=9";
 
 const STORAGE_KEY = "osquest_progress_v2";
 const READINGS_KEY = "osquest_readings_v1";
@@ -413,6 +413,46 @@ function renderTopic(topicId) {
   root.appendChild(list);
 }
 
+function renderNotesHub() {
+  clearRoot();
+
+  const header = document.createElement("div");
+  header.className = "module-header";
+  header.innerHTML = `<button class="back-btn">&lt;&lt; Topics</button><h2>📝 Study Notes</h2>`;
+  header.querySelector(".back-btn").addEventListener("click", () => navigate(""));
+  root.appendChild(header);
+
+  const intro = document.createElement("div");
+  intro.className = "hub-intro";
+  intro.innerHTML = `<p>Condensed study notes for every topic — covering the textbook chapters AND the lecture slides, in one place. Pick a topic to start reading.</p>`;
+  root.appendChild(intro);
+
+  const grid = document.createElement("div");
+  grid.className = "topic-grid";
+
+  TOPICS.forEach((topic) => {
+    const card = document.createElement("div");
+    card.className = "topic-card";
+    card.tabIndex = 0;
+    card.innerHTML = `
+      <div class="topic-head">
+        <span class="topic-icon">${topic.icon}</span>
+        <h3>${topic.title}</h3>
+      </div>
+      <p>${topic.description}</p>
+      <div class="topic-meta"><span>${topic.notes?.length ?? 0} note sections</span></div>
+    `;
+    const go = () => navigate(`topic/${topic.id}/notes`);
+    card.addEventListener("click", go);
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") go();
+    });
+    grid.appendChild(card);
+  });
+
+  root.appendChild(grid);
+}
+
 function renderNotes(topicId) {
   const topic = TOPICS.find((t) => t.id === topicId);
   if (!topic) {
@@ -502,6 +542,8 @@ function router() {
     renderTopic(parts[1]);
   } else if (parts[0] === "readings") {
     renderReadings();
+  } else if (parts[0] === "notes") {
+    renderNotesHub();
   } else {
     renderHub();
   }
@@ -512,6 +554,7 @@ window.addEventListener("hashchange", router);
 document.addEventListener("DOMContentLoaded", router);
 if (document.readyState !== "loading") router();
 
+document.getElementById("btn-notes").addEventListener("click", () => navigate("notes"));
 document.getElementById("btn-readings").addEventListener("click", () => navigate("readings"));
 
 document.getElementById("btn-reset-progress").addEventListener("click", () => {

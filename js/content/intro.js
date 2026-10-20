@@ -37,6 +37,10 @@ export default {
       heading: "Why this matters for concurrency (a preview)",
       body: "Two threads sharing a counter and each doing `counter++` a small number of times will reliably get the right answer; crank the iteration count way up and the answer starts coming out wrong, and differently wrong each time you run it. Nothing is 'broken' in the usual sense — it's a preview of the concurrency unit: `counter++` is not one atomic step at the hardware level, and whenever two threads can interleave their non-atomic steps on shared data, that data can end up in a state nobody intended. Declaring the variable `volatile` does not fix this — that keyword only affects compiler optimizations, not timing.",
     },
+    {
+      heading: "From the lecture slides: writing C in the age of AI code generation",
+      body: "The lecture explicitly frames this as a shift in what's expected of you as a programmer: an LLM can generate C that compiles and looks syntactically fine, but that code frequently has unchecked return values (open(), mmap(), pthread_create() can all fail silently if you don't check), hidden race conditions, memory leaks, use-after-free bugs, or off-by-one errors — exactly the categories of bugs this course is about learning to recognize. The practical takeaway from the slides: your job increasingly is to be an auditor of code (yours or a model's), not just a generator of it.",
+    },
   ],
   blocks: [
     {

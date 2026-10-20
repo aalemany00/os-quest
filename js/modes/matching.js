@@ -1,4 +1,4 @@
-import { renderStreakStatus } from "./util.js?v=8";
+import { renderStreakStatus } from "./util.js?v=9";
 
 // Term <-> definition matching mode.
 // block: { id, title, pairs: [{ term, def }] }
