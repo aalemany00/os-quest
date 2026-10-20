@@ -1,22 +1,28 @@
-import { TOPICS } from "./content/index.js?v=9";
-import { mountQuiz } from "./modes/quiz.js?v=9";
-import { mountOrdering } from "./modes/ordering.js?v=9";
-import { mountMatching } from "./modes/matching.js?v=9";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=9";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=9";
-import { mountRaceSim } from "./modes/race-sim.js?v=9";
-import { mountFlashcards } from "./modes/flashcards.js?v=9";
+import { TOPICS } from "./content/index.js?v=10";
+import { mountQuiz } from "./modes/quiz.js?v=10";
+import { mountOrdering } from "./modes/ordering.js?v=10";
+import { mountMatching } from "./modes/matching.js?v=10";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=10";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=10";
+import { mountRaceSim } from "./modes/race-sim.js?v=10";
+import { mountFlashcards } from "./modes/flashcards.js?v=10";
 
-const STORAGE_KEY = "osquest_progress_v2";
-const READINGS_KEY = "osquest_readings_v1";
+// Legacy (pre-profile) single-user keys — migrated into the first profile created
+// on a given device, so nobody loses progress when this feature rolls out.
+const LEGACY_PROGRESS_KEY = "osquest_progress_v2";
+const LEGACY_READINGS_KEY = "osquest_readings_v1";
+
+const PROFILES_KEY = "osquest_profiles_v1";
+const ACTIVE_PROFILE_KEY = "osquest_active_profile_v1";
 const DEFAULT_STREAK = 3;
 const root = document.getElementById("view-root");
 
-function loadJSON(key) {
+function loadJSON(key, fallback) {
   try {
-    return JSON.parse(localStorage.getItem(key)) || {};
+    const parsed = JSON.parse(localStorage.getItem(key));
+    return parsed == null ? fallback : parsed;
   } catch {
-    return {};
+    return fallback;
   }
 }
 
@@ -28,21 +34,72 @@ function saveJSON(key, value) {
   }
 }
 
-function loadProgress() {
-  return loadJSON(STORAGE_KEY);
+function progressKey(profile) {
+  return `osquest_progress_v2::${profile}`;
+}
+function readingsKey(profile) {
+  return `osquest_readings_v1::${profile}`;
 }
 
-function saveProgress(progress) {
-  saveJSON(STORAGE_KEY, progress);
+let profiles = loadJSON(PROFILES_KEY, []);
+let activeProfile = loadJSON(ACTIVE_PROFILE_KEY, null);
+let progress = activeProfile ? loadJSON(progressKey(activeProfile), {}) : {};
+let readingsDone = activeProfile ? loadJSON(readingsKey(activeProfile), {}) : {};
+
+function saveProgress(p) {
+  if (!activeProfile) return;
+  saveJSON(progressKey(activeProfile), p);
 }
 
-let progress = loadProgress();
-let readingsDone = loadJSON(READINGS_KEY);
+function saveReadingsDone(r) {
+  if (!activeProfile) return;
+  saveJSON(readingsKey(activeProfile), r);
+}
 
 function toggleReadingDone(topicId, idx) {
   readingsDone[topicId] = readingsDone[topicId] || {};
   readingsDone[topicId][idx] = !readingsDone[topicId][idx];
-  saveJSON(READINGS_KEY, readingsDone);
+  saveReadingsDone(readingsDone);
+}
+
+// Create (or switch to) a named profile, scoping all future reads/writes to it.
+// The very first profile ever created on a device inherits any pre-profile
+// (legacy) progress, so early users don't lose anything.
+function selectProfile(name) {
+  const isNew = !profiles.includes(name);
+  if (isNew) {
+    profiles = [...profiles, name];
+    saveJSON(PROFILES_KEY, profiles);
+    if (profiles.length === 1) {
+      const legacyProgress = loadJSON(LEGACY_PROGRESS_KEY, null);
+      const legacyReadings = loadJSON(LEGACY_READINGS_KEY, null);
+      if (legacyProgress) saveJSON(progressKey(name), legacyProgress);
+      if (legacyReadings) saveJSON(readingsKey(name), legacyReadings);
+    }
+  }
+  activeProfile = name;
+  saveJSON(ACTIVE_PROFILE_KEY, name);
+  progress = loadJSON(progressKey(name), {});
+  readingsDone = loadJSON(readingsKey(name), {});
+}
+
+function signOutProfile() {
+  activeProfile = null;
+  saveJSON(ACTIVE_PROFILE_KEY, null);
+  progress = {};
+  readingsDone = {};
+}
+
+function deleteProfile(name) {
+  profiles = profiles.filter((p) => p !== name);
+  saveJSON(PROFILES_KEY, profiles);
+  try {
+    localStorage.removeItem(progressKey(name));
+    localStorage.removeItem(readingsKey(name));
+  } catch {
+    /* ignore */
+  }
+  if (activeProfile === name) signOutProfile();
 }
 
 // A "pass" is a fully-correct attempt — the bar for counting toward mastery.
@@ -156,11 +213,84 @@ function masteryBadge(mastery) {
 }
 
 function navigate(view) {
-  window.location.hash = view;
+  const current = window.location.hash.replace(/^#\/?/, "");
+  if (current === view) {
+    // Setting the hash to its current value doesn't fire 'hashchange' — re-render directly
+    // (this matters right after selecting a profile while already sitting at the bare hub URL).
+    router();
+  } else {
+    window.location.hash = view;
+  }
 }
 
 function clearRoot() {
   root.innerHTML = "";
+}
+
+function renderProfileGate() {
+  clearRoot();
+
+  const intro = document.createElement("div");
+  intro.className = "hub-intro";
+  intro.innerHTML = `
+    <h1>🕹️ Who's Playing?</h1>
+    <p>Everyone studying from this device/link gets their own save file — pick your name to load your progress, or create a new one. Nothing here is sent anywhere; it's saved only in this browser.</p>
+  `;
+  root.appendChild(intro);
+
+  if (profiles.length > 0) {
+    const list = document.createElement("div");
+    list.className = "profile-list";
+    profiles.forEach((name) => {
+      const row = document.createElement("div");
+      row.className = "profile-row";
+      const btn = document.createElement("button");
+      btn.className = "btn profile-select-btn";
+      btn.textContent = `👤 ${name}`;
+      btn.addEventListener("click", () => {
+        selectProfile(name);
+        navigate("");
+      });
+      const del = document.createElement("button");
+      del.className = "ghost-btn profile-delete-btn";
+      del.textContent = "🗑";
+      del.title = `Delete ${name}'s profile and progress`;
+      del.addEventListener("click", () => {
+        if (confirm(`Delete ${name}'s profile? This permanently erases their saved progress on this device.`)) {
+          deleteProfile(name);
+          renderProfileGate();
+        }
+      });
+      row.appendChild(btn);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+    root.appendChild(list);
+  }
+
+  const formWrap = document.createElement("div");
+  formWrap.className = "mode-shell";
+  formWrap.innerHTML = `
+    <h3>${profiles.length > 0 ? "New player" : "Enter your name to start"}</h3>
+    <div class="flex-row">
+      <input type="text" id="new-profile-input" placeholder="Your name" maxlength="40" style="flex:1; min-width:160px;" />
+      <button class="btn" id="new-profile-btn">Start studying</button>
+    </div>
+  `;
+  root.appendChild(formWrap);
+
+  const input = formWrap.querySelector("#new-profile-input");
+  const go = () => {
+    const name = input.value.trim();
+    if (!name) return;
+    selectProfile(name);
+    navigate("");
+  };
+  formWrap.querySelector("#new-profile-btn").addEventListener("click", go);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") go();
+  });
+  input.focus();
 }
 
 function renderHub() {
@@ -531,7 +661,19 @@ function renderBlock(topicId, blockId) {
   }
 }
 
+function updateProfileBadge() {
+  const badge = document.getElementById("profile-badge");
+  if (!badge) return;
+  badge.textContent = activeProfile ? `👤 ${activeProfile}` : "";
+  badge.style.display = activeProfile ? "" : "none";
+}
+
 function router() {
+  updateProfileBadge();
+  if (!activeProfile) {
+    renderProfileGate();
+    return;
+  }
   const hash = window.location.hash.replace(/^#\/?/, "");
   const parts = hash.split("/").filter(Boolean);
   if (parts[0] === "topic" && parts[1] && parts[2] === "notes") {
@@ -557,10 +699,18 @@ if (document.readyState !== "loading") router();
 document.getElementById("btn-notes").addEventListener("click", () => navigate("notes"));
 document.getElementById("btn-readings").addEventListener("click", () => navigate("readings"));
 
+document.getElementById("btn-switch-user").addEventListener("click", () => {
+  signOutProfile();
+  router();
+});
+
 document.getElementById("btn-reset-progress").addEventListener("click", () => {
-  if (confirm("Reset all progress? This can't be undone.")) {
+  if (!activeProfile) return;
+  if (confirm(`Reset ${activeProfile}'s progress? This can't be undone — other profiles on this device are unaffected.`)) {
     progress = {};
+    readingsDone = {};
     saveProgress(progress);
+    saveReadingsDone(readingsDone);
     router();
   }
 });

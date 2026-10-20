@@ -111,6 +111,38 @@ body::before {
 .ghost-btn:hover { border-color: var(--accent); color: var(--accent); }
 .ghost-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 rgba(0,0,0,0.5); }
 
+.profile-badge {
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  color: var(--good);
+  text-shadow: 0 0 6px var(--good);
+  white-space: nowrap;
+}
+
+.profile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.profile-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.profile-select-btn {
+  flex: 1;
+  text-align: left;
+  background: var(--bg-card);
+  color: var(--text);
+}
+.profile-select-btn:hover { background: var(--bg-elevated); border-color: var(--accent); color: var(--accent); }
+.profile-delete-btn {
+  flex: none;
+  font-size: 0.9rem;
+}
+.profile-delete-btn:hover { border-color: var(--danger); color: var(--danger); }
+
 .view-root {
   flex: 1;
   width: 100%;
