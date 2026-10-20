@@ -4,7 +4,7 @@ export default {
   title: "CPU Scheduling & MLFQ",
   description: "Scheduling policies — FCFS, SJF, STCF, Round Robin — and the Multi-Level Feedback Queue, with the course's own worked examples.",
   readings: [
-    { kind: "missing", title: "OSTEP Chapter 7 — Scheduling: Introduction (not in your Learning Material folder — add it if you have it)" },
+    { kind: "chapter", chapter: 7, title: "Scheduling: Introduction", file: "cpu-sched.pdf" },
     { kind: "chapter", chapter: 8, title: "Scheduling: The Multi-Level Feedback Queue", file: "cpu-sched-mlfq.pdf" },
     { kind: "slides", title: "Lecture 4 — Scheduling (PreClass)", file: "TCSS 422 Lecture 4 Scheduling - PreClass.pptx" },
     { kind: "slides", title: "Lecture 4 — Scheduling (AfterClass)", file: "TCSS 422 Lecture 4 Scheduling - AfterClass.pptx" },
@@ -16,7 +16,11 @@ export default {
     },
     {
       heading: "FCFS and the convoy effect",
-      body: "First-Come-First-Served is the simplest policy imaginable: run jobs in arrival order, to completion, no interruptions. Its failure mode is the 'convoy effect' — if a long job happens to arrive first, every short job behind it is stuck waiting the entire time, which can tank average turnaround time badly even though total work done is identical.",
+      body: "First-Come-First-Served is the simplest policy imaginable: run jobs in arrival order, to completion, no interruptions. Its failure mode is the 'convoy effect' — if a long job happens to arrive first, every short job behind it is stuck waiting the entire time, which can tank average turnaround time badly even though total work done is identical. OSTEP's own example makes this concrete: three jobs (A=100s, B=10s, C=10s) all arriving together, run in that order, average 110 seconds of turnaround — just reordering to run the short jobs first cuts that to 50.",
+    },
+    {
+      heading: "Building up to a realistic scheduler, one assumption at a time",
+      body: "The chapter starts from five deliberately unrealistic assumptions — every job takes the same time, all jobs arrive together, a job always runs to completion once started, jobs never do I/O, and (the big one) the scheduler magically knows each job's run-time in advance. Each policy introduced (SJF, STCF, Round Robin, and eventually MLFQ) exists specifically to relax one more of these assumptions and get closer to how a real OS actually has to behave.",
     },
     {
       heading: "SJF and STCF fix the ordering problem — differently",
@@ -55,6 +59,9 @@ export default {
         { front: "CPU utilization (exact formula)", back: "Useful busy time ÷ total time — higher is better. Overlapping a job's I/O wait with another job's CPU burst is a classic way to push this toward 100%." },
         { front: "Voo-doo constants (Ousterhout's Law)", back: "Tunable 'magic number' scheduler parameters (like the priority-boost period S) that have no principled closed-form value: too high and long jobs starve between boosts; too low and interactive jobs are under-served." },
         { front: "Real-world MLFQ: Solaris vs. FreeBSD", back: "Solaris's 'Time-Sharing' class uses 60 queues, slices from 20ms up to a few hundred ms, with a boost roughly every 1 second. FreeBSD instead computes priority from a decayed history of CPU usage rather than fixed queues." },
+        { front: "The 5 workload assumptions the chapter starts from", back: "(1) Every job runs for the same amount of time. (2) All jobs arrive at the same time. (3) Once started, a job runs to completion. (4) Jobs only use the CPU — no I/O. (5) Each job's run-time is known in advance. Every one of these gets relaxed, one at a time, as the chapter builds toward a more realistic scheduler." },
+        { front: "Why relaxing assumption 5 is the big one", back: "Knowing a job's run-time in advance would make the scheduler omniscient — which real general-purpose OSes are not. This single unrealistic assumption is the direct motivation for MLFQ: a scheduler that infers 'short vs. long' from observed behavior instead of requiring foreknowledge." },
+        { front: "Performance vs. fairness", back: "These two goals are often directly at odds: a scheduler optimized purely for performance (e.g. turnaround time) can starve some jobs of CPU time to keep others fast, which is good for performance but bad for fairness." },
       ],
     },
     {
@@ -85,6 +92,41 @@ export default {
         { metric: "turnaround", job: "P2", options: [3, 24, 27, 30], correctIndex: 2 },
         { metric: "turnaround", job: "P3", options: [3, 27, 30, 24], correctIndex: 2 },
         { metric: "completion", job: "P1", options: [3, 24, 27, 30], correctIndex: 1 },
+      ],
+    },
+    {
+      type: "scheduler-sim",
+      id: "sched-textbook-convoy",
+      title: "The Textbook's Own Convoy Example",
+      algorithm: "FIFO",
+      intro: "OSTEP's own baseline example: jobs A, B, C all arrive at t=0. A needs 100 seconds; B and C need only 10 each. FIFO has to run them in some order — say A, B, C.",
+      jobs: [
+        { name: "A", arrival: 0, burst: 100 },
+        { name: "B", arrival: 0, burst: 10 },
+        { name: "C", arrival: 0, burst: 10 },
+      ],
+      questions: [
+        { metric: "turnaround", job: "B", options: [10, 20, 100, 110], correctIndex: 3 },
+        { metric: "turnaround", job: "C", options: [10, 20, 110, 120], correctIndex: 3 },
+      ],
+    },
+    {
+      type: "quiz",
+      id: "sched-textbook-convoy-avg",
+      title: "Average Turnaround: Before and After SJF",
+      questions: [
+        {
+          q: "For that same example (A=100, B=10, C=10, all arriving at t=0), what is the average turnaround time under FIFO run in order A, B, C?",
+          options: ["20", "50", "103.33", "110"],
+          correctIndex: 3,
+          explain: "A finishes at 100, B at 110, C at 120 → turnarounds 100, 110, 120 → average = 330/3 = 110. This is OSTEP's own number for this exact example — 'a painful 110 seconds.'",
+        },
+        {
+          q: "Now run the SAME three jobs under SJF instead (shortest job first: B, C, then A). What does average turnaround time become?",
+          options: ["20", "50", "90", "110"],
+          correctIndex: 1,
+          explain: "B finishes at 10, C at 20, A at 120 → turnarounds 10, 20, 120 → average = 150/3 = 50. Simply reordering which job runs first — using no extra hardware at all — cuts average turnaround from 110 to 50, more than 2x, which is exactly OSTEP's point about SJF.",
+        },
       ],
     },
     {

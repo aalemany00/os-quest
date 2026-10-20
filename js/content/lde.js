@@ -4,9 +4,9 @@ export default {
   title: "Limited Direct Execution",
   description: "How the OS virtualizes the CPU efficiently and safely: direct execution, traps, and context switches.",
   readings: [
+    { kind: "chapter", chapter: 6, title: "Mechanism: Limited Direct Execution", file: "cpu-mechanisms.pdf" },
     { kind: "slides", title: "Lecture 3 — Limited Direct Execution (PreClass)", file: "TCSS 422 Lecture 3 LDE - PreClass.pptx" },
     { kind: "slides", title: "Lecture 3 — Limited Direct Execution (AfterClass)", file: "TCSS 422 Lecture 3 LDE - AfterClass.pptx" },
-    { kind: "missing", title: "OSTEP Chapter 6 — Mechanism: Limited Direct Execution (not in your Learning Material folder — add it if you have it)" },
   ],
   notes: [
     {
@@ -50,6 +50,9 @@ export default {
         { front: "switch() routine", back: "The OS routine that performs a context switch between two DIFFERENT processes: (a) save regs(A) to proc-struct(A), (b) restore regs(B) from proc-struct(B), (c) switch to kernel stack(B)." },
         { front: "Voluntary vs. involuntary context switch", back: "Voluntary: caused by the process itself (e.g. a blocking system call). Involuntary: forced from outside the process (e.g. a timer interrupt)." },
         { front: "Common misconception: does every trap cause a context switch?", back: "No. A plain system call traps into the kernel and typically returns to the SAME process via return-from-trap. An actual context switch (switching to a different process) is a separate, deliberate step the OS chooses to take — not automatic on every kernel entry." },
+        { front: "Real measured costs (lmbench)", back: "Historically (1996, Linux 1.3.37 on a 200MHz CPU): a system call cost roughly 4 microseconds, a context switch roughly 6 microseconds. Modern CPUs do both in well under a microsecond — though OS costs don't always track raw CPU speed, since a lot of OS work is memory-bound rather than compute-bound." },
+        { front: "Why interrupts get disabled during interrupt handling", back: "One simple way the OS avoids a mess when a second interrupt arrives while it's still handling a first one: temporarily disable interrupts during interrupt processing, so nothing else can interrupt the handler mid-flight. (Done for too long, though, this risks losing interrupts — real OSes also use more sophisticated locking.)" },
+        { front: "Why 'just reboot it' isn't actually a bad answer", back: "Research on 'microreboots' has shown that restarting software is a genuinely useful recovery technique, not just a crude hack: it resets a program to a known, tested state and reclaims leaked resources — which is part of why cooperative multitasking's 'reboot the machine' fallback wasn't as absurd as it sounds." },
         { front: "The 'teller' analogy for system calls", back: "Customers (user processes) ask the teller (the OS's system calls) to perform restricted operations on their behalf — device I/O, task swapping/context switching, memory management (malloc()), process creation/destruction — rather than reaching behind the counter themselves." },
       ],
     },

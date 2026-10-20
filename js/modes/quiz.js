@@ -1,4 +1,4 @@
-import { prepareQuestions, renderStreakStatus } from "./util.js?v=7";
+import { prepareQuestions, renderStreakStatus } from "./util.js?v=8";
 
 // Multiple-choice quiz mode.
 // block: { id, title, sampleSize?, questions: [{ q, options: string[], correctIndex, explain }] }

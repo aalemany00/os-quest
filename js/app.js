@@ -1,11 +1,11 @@
-import { TOPICS } from "./content/index.js?v=7";
-import { mountQuiz } from "./modes/quiz.js?v=7";
-import { mountOrdering } from "./modes/ordering.js?v=7";
-import { mountMatching } from "./modes/matching.js?v=7";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=7";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=7";
-import { mountRaceSim } from "./modes/race-sim.js?v=7";
-import { mountFlashcards } from "./modes/flashcards.js?v=7";
+import { TOPICS } from "./content/index.js?v=8";
+import { mountQuiz } from "./modes/quiz.js?v=8";
+import { mountOrdering } from "./modes/ordering.js?v=8";
+import { mountMatching } from "./modes/matching.js?v=8";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=8";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=8";
+import { mountRaceSim } from "./modes/race-sim.js?v=8";
+import { mountFlashcards } from "./modes/flashcards.js?v=8";
 
 const STORAGE_KEY = "osquest_progress_v2";
 const READINGS_KEY = "osquest_readings_v1";
