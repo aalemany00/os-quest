@@ -7,6 +7,24 @@ export default {
     { kind: "handout", title: "Quiz 1 — C Tutorial", file: "Quiz 1/TCSS 422 Quiz 1 C Tutorial.pdf" },
     { kind: "code", title: "Sample Codes of Lecture 1 (cpu.c, io.c, mem.c, threads.c, common.h)", file: "Sample Codes of Lecture 1/" },
   ],
+  notes: [
+    {
+      heading: "A C string is just a pointer",
+      body: "There's no separate 'string' type in C — a string is a pointer to the first character of a run of bytes, and C figures out where it ends by scanning forward until it hits a NULL byte (ASCII 0). That's why `argv[0]` and 'the address of the program name's first character' are the exact same thing, and why printing `cmd[strlen(cmd)]` after reading input with fscanf() comes out as 0 — strlen() tells you the length NOT counting that terminator, so the very next byte is it.",
+    },
+    {
+      heading: "Copying a pointer is not copying a string",
+      body: "This is the trap the tutorial is built around. If you do `ourarray[j] = argv[i];`, you have copied an address, not characters — both variables now point at the exact same memory. Mutate one character through `ourarray` and you'll see `argv` change too, which feels like a bug the first time you hit it. The fix is to allocate fresh memory and use `strcpy(dest, src)` to actually copy the bytes (including the terminator) into memory you own. Only then are the two arrays independent.",
+    },
+    {
+      heading: "sizeof and malloc work in bytes, not elements",
+      body: "`malloc()` wants a byte count. `malloc(sizeof(char *) * argc)` is correct because `sizeof(char *)` gives you the exact size of one pointer on the current machine, and multiplying by argc gets the total bytes right regardless of whether pointers happen to be 4 or 8 bytes wide on a given platform.",
+    },
+    {
+      heading: "execvp() replaces the program, it doesn't return",
+      body: "`execvp(file, argv)` searches your PATH for `file` and, if found, throws away the calling process's code, data, heap, and stack, replacing them with the new program — same process ID, completely different program running inside it. On success it never returns, so any code written after the call is dead code that will never execute. It only returns at all if it failed. One easy way to break this: the argv array you pass must end with a NULL — execvp() has no separate 'count' argument, so it reads elements until it finds NULL, and if you forgot to put one there it'll walk off the end into uninitialized memory.",
+    },
+  ],
   blocks: [
     {
       type: "flashcards",

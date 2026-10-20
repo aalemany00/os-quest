@@ -9,6 +9,32 @@ export default {
     { kind: "slides", title: "Lecture 4 — Scheduling (PreClass)", file: "TCSS 422 Lecture 4 Scheduling - PreClass.pptx" },
     { kind: "slides", title: "Lecture 4 — Scheduling (AfterClass)", file: "TCSS 422 Lecture 4 Scheduling - AfterClass.pptx" },
   ],
+  notes: [
+    {
+      heading: "The metrics that make scheduling measurable",
+      body: "Turnaround time is completion time minus arrival time — the full wait, including execution. Response time is how long it takes until a job FIRST gets any CPU time, which matters most for anything interactive. Throughput is completed jobs per unit time, and CPU utilization is the fraction of time the CPU spends doing useful work rather than sitting idle. Different scheduling policies trade these off against each other.",
+    },
+    {
+      heading: "FCFS and the convoy effect",
+      body: "First-Come-First-Served is the simplest policy imaginable: run jobs in arrival order, to completion, no interruptions. Its failure mode is the 'convoy effect' — if a long job happens to arrive first, every short job behind it is stuck waiting the entire time, which can tank average turnaround time badly even though total work done is identical.",
+    },
+    {
+      heading: "SJF and STCF fix the ordering problem — differently",
+      body: "Shortest Job First always picks the shortest available job next, but it's non-preemptive: once a job starts, it runs to completion even if a shorter job arrives a moment later. Shortest Time-to-Completion First is the preemptive version — a newly arrived job with less remaining work than the current job immediately takes over. STCF is the better of the two for turnaround time, at the cost of extra context switches, but both share an impossible requirement: they need to know each job's length in advance, which the OS generally does not.",
+    },
+    {
+      heading: "Round Robin trades turnaround for response time",
+      body: "Round Robin gives each ready job a fixed quantum of CPU time, then moves it to the back of the queue, repeating until every job finishes. It's excellent for response time — with a short enough quantum, every job gets attention almost immediately — but it can hurt average turnaround time compared to running jobs to completion in a good order, and every quantum switch is a real context-switch cost in practice.",
+    },
+    {
+      heading: "MLFQ: approximating SJF without knowing the future",
+      body: "The Multi-Level Feedback Queue (invented in 1962, Turing-Award-winning work) solves the 'we don't know job lengths' problem by inferring behavior instead of requiring foreknowledge. It keeps several priority queues, each with its own quantum. New jobs start at the top. A job that uses its whole time allotment at a level gets knocked down a queue; a job that keeps giving up the CPU quickly (behaving like a short, interactive job) stays high up, which means it gets scheduled sooner — exactly the effect SJF/STCF want, achieved by watching behavior rather than knowing burst lengths ahead of time.",
+    },
+    {
+      heading: "MLFQ's two failure modes, and their fixes",
+      body: "Left as described, long jobs can starve forever if short jobs keep arriving at the top queue — fixed by periodically boosting every job back to the top queue, guaranteeing everyone eventually gets a turn. The other failure mode is 'gaming': a job could issue a tiny I/O operation right before its allotment runs out, avoiding demotion while still occupying the CPU almost constantly. The fix is to track a job's CUMULATIVE time at a level rather than only checking whether it used one quantum in a single uninterrupted stretch — so giving up the CPU early no longer resets the clock.",
+    },
+  ],
   blocks: [
     {
       type: "flashcards",

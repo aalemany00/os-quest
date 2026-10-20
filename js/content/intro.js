@@ -8,6 +8,36 @@ export default {
     { kind: "slides", title: "Lecture 1 — Introduction (PreClass)", file: "TCSS 422 Lecture 1 Introduction - PreClass.pptx" },
     { kind: "slides", title: "Lecture 1 — Introduction (AfterClass)", file: "TCSS 422 Lecture 1 Introduction - AfterClass.pptx" },
   ],
+  notes: [
+    {
+      heading: "What an OS actually does",
+      body: "An operating system sits between your programs and the physical hardware. Its job is to take a messy, limited physical resource — a CPU, a chunk of memory, a disk — and turn it into something easier and safer to use. Run `./cpu A` and `./cpu B` at the same time and each one acts like it owns the whole processor; run two copies of a program that each allocate memory and each will see their own private address space, even if they happen to print the exact same-looking address. Neither program can see this illusion from the inside — that's the point. The OS is the thing doing the illusion-making underneath.",
+    },
+    {
+      heading: "Virtualization, in one mapping",
+      body: "The course keeps coming back to one mapping: the CPU gets virtualized into processes and/or threads, memory gets virtualized into an address space per process, and the disk gets virtualized into files. A network card, by the same logic, gets virtualized into sockets — not into 'another address space,' which is a common mix-up on exams, since address space is specifically what memory virtualizes into.",
+    },
+    {
+      heading: "System calls: asking the OS nicely",
+      body: "A regular program can't just reach out and touch the disk or the network directly — that would make it trivial for one buggy or malicious program to wreck everything else running on the machine. Instead, it has to ask the OS to do it on its behalf, through a system call. Mechanically, a system call is a special trap instruction: it jumps into a kernel-mode handler that the OS registered back at boot time, does the privileged work, and then jumps back to exactly where the program left off. This is also why people sometimes describe the OS as 'a standard library you didn't have to write' — it's a few hundred of these entry points, covering everything from reading a file to creating a new process.",
+    },
+    {
+      heading: "User mode vs. kernel mode",
+      body: "The hardware itself enforces this boundary — it isn't just a polite convention. In user mode, a long list of operations are physically disabled: a program can't issue raw I/O instructions, can't touch arbitrary physical memory, can't do much of anything dangerous. Kernel mode lifts all of those restrictions. The ONLY way to get from one to the other safely is through the trap mechanism above, jumping to code the OS itself put there — never to an arbitrary address a user program points at.",
+    },
+    {
+      heading: "A short history: batch → multiprogramming → time-sharing",
+      body: "Early machines ran in batches: an operator physically loaded one job, let it run start to finish, then loaded the next. That wastes the CPU anytime a job is waiting on something slow, like I/O. Multiprogramming fixed that by keeping several jobs in memory at once, so the OS could switch to a different one whenever the current one blocked. Time-sharing pushed this further into something interactive — many users and programs all appearing to run at once, which is the model every modern OS uses.",
+    },
+    {
+      heading: "Mechanism vs. policy — a theme for the whole course",
+      body: "This distinction shows up constantly from here on: a mechanism is the low-level machinery for doing something (how do you actually save and restore a process's registers during a context switch?), while a policy is the higher-level decision about how to use that machinery (which process should run next?). Keeping these separate means you can swap out a scheduling algorithm without touching the context-switch code at all.",
+    },
+    {
+      heading: "Why this matters for concurrency (a preview)",
+      body: "Two threads sharing a counter and each doing `counter++` a small number of times will reliably get the right answer; crank the iteration count way up and the answer starts coming out wrong, and differently wrong each time you run it. Nothing is 'broken' in the usual sense — it's a preview of the concurrency unit: `counter++` is not one atomic step at the hardware level, and whenever two threads can interleave their non-atomic steps on shared data, that data can end up in a state nobody intended. Declaring the variable `volatile` does not fix this — that keyword only affects compiler optimizations, not timing.",
+    },
+  ],
   blocks: [
     {
       type: "flashcards",

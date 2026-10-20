@@ -1,11 +1,11 @@
-import { TOPICS } from "./content/index.js?v=2";
-import { mountQuiz } from "./modes/quiz.js?v=2";
-import { mountOrdering } from "./modes/ordering.js?v=2";
-import { mountMatching } from "./modes/matching.js?v=2";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=2";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=2";
-import { mountRaceSim } from "./modes/race-sim.js?v=2";
-import { mountFlashcards } from "./modes/flashcards.js?v=2";
+import { TOPICS } from "./content/index.js?v=3";
+import { mountQuiz } from "./modes/quiz.js?v=3";
+import { mountOrdering } from "./modes/ordering.js?v=3";
+import { mountMatching } from "./modes/matching.js?v=3";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=3";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=3";
+import { mountRaceSim } from "./modes/race-sim.js?v=3";
+import { mountFlashcards } from "./modes/flashcards.js?v=3";
 
 const STORAGE_KEY = "osquest_progress_v1";
 const READINGS_KEY = "osquest_readings_v1";
@@ -244,6 +244,13 @@ function renderReadings() {
       const box = document.createElement("div");
       box.className = "suggestions-box";
       box.innerHTML = `<h4>Suggestion</h4>`;
+      if (topic.notes?.length) {
+        const notesBtn = document.createElement("button");
+        notesBtn.className = "suggestion-item";
+        notesBtn.textContent = `📖 Read the study notes for ${topic.title} →`;
+        notesBtn.addEventListener("click", () => navigate(`topic/${topic.id}/notes`));
+        box.appendChild(notesBtn);
+      }
       const btn = document.createElement("button");
       btn.className = "suggestion-item";
       btn.textContent = `Start with ${topic.title} →`;
@@ -253,7 +260,14 @@ function renderReadings() {
     } else if (mastery.weak.length > 0 || mastery.unattempted.length > 0) {
       const box = document.createElement("div");
       box.className = "suggestions-box";
-      box.innerHTML = `<h4>Revisit the reading above, then retry</h4>`;
+      box.innerHTML = `<h4>Looks like you're struggling with this one — review, then retry</h4>`;
+      if (topic.notes?.length) {
+        const notesBtn = document.createElement("button");
+        notesBtn.className = "suggestion-item";
+        notesBtn.textContent = `📖 Read the study notes for ${topic.title} →`;
+        notesBtn.addEventListener("click", () => navigate(`topic/${topic.id}/notes`));
+        box.appendChild(notesBtn);
+      }
       mastery.weak
         .sort((a, b) => a.pct - b.pct)
         .forEach(({ block, pct }) => {
@@ -314,6 +328,15 @@ function renderTopic(topicId) {
   desc.textContent = topic.description;
   root.appendChild(desc);
 
+  if (topic.notes?.length) {
+    const notesBtn = document.createElement("button");
+    notesBtn.className = "btn";
+    notesBtn.style.marginBottom = "18px";
+    notesBtn.textContent = "📖 Read the study notes for this topic";
+    notesBtn.addEventListener("click", () => navigate(`topic/${topic.id}/notes`));
+    root.appendChild(notesBtn);
+  }
+
   const list = document.createElement("div");
   list.className = "block-list";
 
@@ -333,6 +356,48 @@ function renderTopic(topicId) {
   });
 
   root.appendChild(list);
+}
+
+function renderNotes(topicId) {
+  const topic = TOPICS.find((t) => t.id === topicId);
+  if (!topic) {
+    navigate("");
+    return;
+  }
+  clearRoot();
+
+  const header = document.createElement("div");
+  header.className = "module-header";
+  header.innerHTML = `<button class="back-btn">&larr; ${topic.title}</button><h2>📖 ${topic.title} — Study Notes</h2>`;
+  header.querySelector(".back-btn").addEventListener("click", () => navigate(`topic/${topic.id}`));
+  root.appendChild(header);
+
+  const shell = document.createElement("div");
+  shell.className = "mode-shell notes-shell";
+
+  if (!topic.notes?.length) {
+    shell.textContent = "No notes written for this topic yet.";
+  } else {
+    topic.notes.forEach((section) => {
+      const h = document.createElement("h3");
+      h.textContent = section.heading;
+      const p = document.createElement("p");
+      p.textContent = section.body;
+      shell.appendChild(h);
+      shell.appendChild(p);
+    });
+  }
+  root.appendChild(shell);
+
+  const row = document.createElement("div");
+  row.className = "flex-row";
+  row.style.marginTop = "18px";
+  const practiceBtn = document.createElement("button");
+  practiceBtn.className = "btn";
+  practiceBtn.textContent = "Done reading — go practice →";
+  practiceBtn.addEventListener("click", () => navigate(`topic/${topic.id}`));
+  row.appendChild(practiceBtn);
+  root.appendChild(row);
 }
 
 function renderBlock(topicId, blockId) {
@@ -374,7 +439,9 @@ function renderBlock(topicId, blockId) {
 function router() {
   const hash = window.location.hash.replace(/^#\/?/, "");
   const parts = hash.split("/").filter(Boolean);
-  if (parts[0] === "topic" && parts[1] && parts[2]) {
+  if (parts[0] === "topic" && parts[1] && parts[2] === "notes") {
+    renderNotes(parts[1]);
+  } else if (parts[0] === "topic" && parts[1] && parts[2]) {
     renderBlock(parts[1], parts[2]);
   } else if (parts[0] === "topic" && parts[1]) {
     renderTopic(parts[1]);

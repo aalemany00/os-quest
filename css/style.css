@@ -225,6 +225,18 @@ html, body {
 .mode-shell h3 {
   margin-top: 0;
 }
+
+.notes-shell h3 {
+  color: var(--accent);
+  font-size: 1.05rem;
+  margin: 22px 0 8px;
+}
+.notes-shell h3:first-child { margin-top: 0; }
+.notes-shell p {
+  line-height: 1.65;
+  color: var(--text);
+  margin: 0 0 4px;
+}
 .mode-progress {
   font-size: 0.8rem;
   color: var(--text-dim);

@@ -8,6 +8,32 @@ export default {
     { kind: "slides", title: "Lecture 3 — Limited Direct Execution (AfterClass)", file: "TCSS 422 Lecture 3 LDE - AfterClass.pptx" },
     { kind: "missing", title: "OSTEP Chapter 6 — Mechanism: Limited Direct Execution (not in your Learning Material folder — add it if you have it)" },
   ],
+  notes: [
+    {
+      heading: "The problem: speed vs. control",
+      body: "If the OS just lets a program run directly on the CPU ('direct execution'), it's fast — but the OS has handed over all control. There's no way to stop a program that loops forever, no way to keep it from touching memory or devices it shouldn't. Limited Direct Execution is the compromise: let the program run directly most of the time, but build hardware support so the OS can still regain control when it needs to, and so dangerous operations are blocked by the hardware itself, not just by good behavior.",
+    },
+    {
+      heading: "Traps come in three flavors",
+      body: "Any transfer into kernel mode is a trap. A system call is a trap the program asks for on purpose. An exception is a trap caused by an error the hardware detects mid-instruction, like a divide-by-zero or an invalid memory access. An interrupt is a trap caused by something external to whatever's currently running — a key being pressed, or (critically) a timer going off. Every system call is a trap, but plenty of traps — like the timer — are not system calls.",
+    },
+    {
+      heading: "The trap table is set up once, at boot, in kernel mode",
+      body: "Before any user program ever runs, the OS registers the addresses of its trap handlers — one for system calls, one for the timer, and so on — with the hardware. From then on, whenever a trap fires, the hardware already knows exactly where to jump; a user program can never redirect a trap somewhere of its own choosing. That boundary is what makes the whole scheme safe.",
+    },
+    {
+      heading: "Why the timer interrupt is the whole ballgame",
+      body: "Before timer interrupts existed, OSes had to rely on 'cooperative' multitasking — trusting that every program would eventually make a system call or explicitly yield the CPU. A program stuck in an infinite loop that never does either simply never gives the CPU back, and the historical fix was genuinely 'reboot the machine.' A periodic timer interrupt closes that hole for good: regardless of what the current process is doing, the hardware forces control back to the OS at a fixed interval, guaranteeing the scheduler always gets another turn.",
+    },
+    {
+      heading: "A context switch, concretely",
+      body: "When the OS decides to switch from process A to process B (as opposed to just handling a trap and returning to the same process), it runs a specific sequence: save A's registers into A's own proc-struct, restore B's registers from B's proc-struct, then switch onto B's kernel stack. Only after that does a return-from-trap hand control back to user mode — now running B instead of A. It's worth remembering that NOT every trap causes this: an ordinary system call typically traps in and returns to the very same process. An actual context switch is a separate decision the OS makes, most commonly right after a timer interrupt.",
+    },
+    {
+      heading: "Mechanism vs. policy, once more",
+      body: "Limited Direct Execution is pure mechanism — the hardware/software machinery for safely virtualizing the CPU (modes, traps, context switches). It says nothing about WHICH process should get to run next; that's the scheduler's job, and it's a separate decision layered on top of this mechanism.",
+    },
+  ],
   blocks: [
     {
       type: "flashcards",

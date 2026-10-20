@@ -9,6 +9,32 @@ export default {
     { kind: "slides", title: "Lecture 5 — Threads & Concurrency (PreClass)", file: "TCSS 422 Lecture 5 Threads & Concurrency - PreClass.pptx" },
     { kind: "code", title: "Sample Codes of Lecture 5 (pthread.c, pthread_create.c)", file: "Sample Codes of Lecture 5/" },
   ],
+  notes: [
+    {
+      heading: "A thread is a process's execution, minus its own address space",
+      body: "A thread has its own program counter, its own registers, and its own stack — enough to be an independent point of execution. What it does NOT get its own copy of is the address space: every thread in a process shares the same heap, the same globals, the same open files. That sharing is both the whole appeal of threads (passing data between them needs no special mechanism) and the whole source of danger (two threads can trample the same memory at the same time).",
+    },
+    {
+      heading: "Why bother with threads at all",
+      body: "Two genuinely different motivations show up: real parallelism, splitting one computation across multiple cores for actual speedup, and overlapping I/O, where one thread blocking on a slow disk read doesn't have to stall the whole program, because other threads keep running. That second use case is the same trick multiprogramming played across whole programs, just applied within a single one.",
+    },
+    {
+      heading: "The race condition, at the instruction level",
+      body: "`counter = counter + 1;` looks like a single step in C, but it compiles down to (at minimum) a load, an increment, and a store. If two threads interleave those three steps badly enough — both load the old value before either stores the new one — one thread's increment gets silently thrown away. Run it with a small number of iterations and you'll probably never see it; run it with a large number and the odds of hitting a bad interleaving at least once become high enough that the final answer comes out wrong, and differently wrong on different runs, since it depends on how the scheduler happened to interleave things that particular time.",
+    },
+    {
+      heading: "Critical sections, mutual exclusion, and atomicity",
+      body: "Any stretch of code that touches shared data and must not run on two threads simultaneously is a critical section. Mutual exclusion is the guarantee that only one thread is ever inside it at a time. Locks (`pthread_mutex_lock`/`unlock`) are the standard tool: a thread that calls lock() while another thread holds it simply blocks until it's released, turning a multi-instruction critical section into something that behaves as if it were one atomic step.",
+    },
+    {
+      heading: "Condition variables — and the one subtlety that trips people up",
+      body: "A condition variable lets a thread sleep until some condition becomes true, without burning CPU in a busy-wait loop. The subtlety: `pthread_cond_wait(&cond, &lock)` atomically releases the lock while it sleeps and re-acquires it automatically before returning — which is exactly why wait() needs the lock passed in and signal() doesn't. The waiting thread should always recheck its condition in a `while` loop rather than an `if`, because of the possibility of a spurious wakeup where the thread wakes up even though nothing actually changed.",
+    },
+    {
+      heading: "Thread creation order is not run order",
+      body: "Calling pthread_create() twice in a row tells you nothing about which of the two threads the scheduler will actually run first — there's no guarantee the one created first runs first. Combined with the race-condition point above, this is why ad hoc, home-rolled synchronization tends to be buggy in practice, and why the course's blunt advice is to just always reach for a condition variable rather than trying to be clever with flags and busy-waiting.",
+    },
+  ],
   blocks: [
     {
       type: "flashcards",
