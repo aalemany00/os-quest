@@ -1,5 +1,5 @@
-import { runSchedule } from "../engine/scheduler.js?v=14";
-import { shuffle, renderStreakStatus } from "./util.js?v=14";
+import { runSchedule } from "../engine/scheduler.js?v=15";
+import { shuffle, renderStreakStatus } from "./util.js?v=15";
 
 // Infinite randomized scheduling practice: a fresh set of jobs (and often a fresh
 // algorithm) every round, with the ground truth always computed by the real
