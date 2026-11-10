@@ -1,4 +1,4 @@
-import { renderStreakStatus } from "./util.js?v=16";
+import { renderStreakStatus } from "./util.js?v=17";
 
 // Flashcard mode — flip to reveal, self-rate known/unknown.
 // block: { id, title, cards: [{ front, back }] }
