@@ -4,7 +4,7 @@ export default {
   title: "Locks",
   description: "Building mutual exclusion from the ground up: disabling interrupts, spin locks, test-and-set, compare-and-swap, and fairness with ticket locks.",
   readings: [
-    { kind: "chapter", chapter: 28, title: "Locks (through 28.2, optional 28.9-28.10)", file: "threads-locks.pdf" },
+    { kind: "chapter", chapter: 28, title: "Locks — Lecture 6 covers §28.1–28.11 (interrupts through fetch-and-add/ticket locks); the Lecture 6 slides mark §28.9–28.10 (CAS, load-linked/store-conditional) as optional extra reading", file: "threads-locks.pdf" },
     { kind: "slides", title: "Lecture 6 — Locks (PreClass)", file: "TCSS 422 Lecture 6 Locks - PreClass.pptx" },
     { kind: "slides", title: "Lecture 6 — Locks (AfterClass)", file: "TCSS 422 Lecture 6 Locks - AfterClass.pptx" },
     { kind: "code", title: "Sample Codes of Lecture 6 (pthread_mutex.c, pthread_spin.c, pthread_spin_testandset.c)", file: "Sample Codes of Lecture 6/" },
