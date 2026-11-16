@@ -1,6 +1,7 @@
 # OS Quest — Plans & Changes Log
 
 Reconstructed from git history (`git log`). Kept going forward as the project continues.
+Companion to [`LOG.d`](LOG.d), the longer chronological build log with architecture notes.
 
 ## What this is
 
@@ -28,21 +29,36 @@ build step, progress saved per-device via `localStorage`.
   - Added in-app study notes plus tutor-style suggestions on what to review.
   - Did a full retro-arcade visual redesign.
   - Decided "complete" shouldn't trigger on a single lucky pass — added a mastery
-    streak requirement.
-  - Wired up OSTEP Chapters 6–7 as additional reading sources.
+    streak requirement (3 in a row, any miss resets to 0). Found and fixed two
+    bugs this surfaced: `ordering.js` calling `insertBefore()` on a stale/detached
+    node after a re-render, and `race-sim.js`'s `setTimeout`-based answer
+    highlighting breaking under the new re-render-after-complete flow.
+  - Wired up OSTEP Chapters 6–7 as additional reading sources, verifying the
+    textbook's convoy example against the scheduler engine's own output (FIFO
+    avg turnaround 110 vs. SJF's 50) rather than trusting the citation as-is.
   - Added a top-level Notes tab for facts that only exist on lecture slides, not in
     the textbook.
 - **2026-10-20 — Multi-user profiles.** Added local per-person profiles (shared
   computer use case), gave each a unique id so same-name profiles can't collide,
   and added export/import so one person's profile can follow them across devices.
   Export/import started as file-based, then was replaced with a copy-paste sync
-  code instead — simpler, no file-picker UX needed. Added an optional PIN so a
-  profile can't be opened by just clicking it.
+  code instead — simpler, no file-picker UX needed (verified the full round trip:
+  export, wipe localStorage to simulate a new device, paste back in, confirmed
+  exact progress restored). Added an optional PIN so a profile can't be opened by
+  just clicking it (SHA-256 hashed, never stored/sent in plain text — explicitly
+  a casual deterrent, not real security, since it's all client-side and
+  inspectable). Along the way, fixed a router bug where navigating to the empty
+  hash after picking a profile didn't re-render, because no `hashchange` event
+  fires when the hash doesn't actually change.
 - **2026-10-30 — Lecture 6 (Locks).** Added mutexes, spin locks, test-and-set, CAS,
   and ticket locks as a topic.
 - **2026-11-10 — Midterm prep pass.** Reviewed the Locks topic against Quiz 2/3 and
-  added midterm-targeted practice questions. Added Lecture 7 (Lock-Based Data
-  Structures) and Lecture 8 (Condition Variables).
+  caught a real citation error in the process — a reading claimed "through §28.2"
+  when the content actually covers through §28.11. Cross-checked the Midterm
+  Announcement's stated scope against the whole game and confirmed it was fully
+  covered. Added midterm-targeted practice built straight from Quiz 2/3's own
+  job/arrival/burst numbers, verified against the scheduler engine. Added
+  Lecture 7 (Lock-Based Data Structures) and Lecture 8 (Condition Variables).
 - **2026-11-16 — Post-midterm content.** Added Lecture 9 (Concurrency Problems) and
   Lecture 10 (Memory Virtualization).
 
@@ -57,6 +73,7 @@ against the actual quiz questions).
 
 ## What I'd still change
 
-- No log/plan file existed until now — added retroactively on 2026-11-16 once
-  I realized the course wants one kept in the artifact's own repo.
+- No log/plan file existed until 2026-11-16, when I added this one plus the
+  longer `LOG.d` build log retroactively, once I realized the course wants one
+  kept in the artifact's own repo.
 - Topics after Lecture 10 (if the course goes further) aren't in yet.
