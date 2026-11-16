@@ -1,11 +1,11 @@
-import { TOPICS } from "./content/index.js?v=17";
-import { mountQuiz } from "./modes/quiz.js?v=17";
-import { mountOrdering } from "./modes/ordering.js?v=17";
-import { mountMatching } from "./modes/matching.js?v=17";
-import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=17";
-import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=17";
-import { mountRaceSim } from "./modes/race-sim.js?v=17";
-import { mountFlashcards } from "./modes/flashcards.js?v=17";
+import { TOPICS } from "./content/index.js?v=18";
+import { mountQuiz } from "./modes/quiz.js?v=18";
+import { mountOrdering } from "./modes/ordering.js?v=18";
+import { mountMatching } from "./modes/matching.js?v=18";
+import { mountSchedulerSim } from "./modes/scheduler-sim.js?v=18";
+import { mountSchedulerPractice } from "./modes/scheduler-practice.js?v=18";
+import { mountRaceSim } from "./modes/race-sim.js?v=18";
+import { mountFlashcards } from "./modes/flashcards.js?v=18";
 
 // Legacy (pre-profile) single-user keys — migrated into the first profile created
 // on a given device, so nobody loses progress when this feature rolls out.

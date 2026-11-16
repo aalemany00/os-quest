@@ -1,5 +1,5 @@
-import { runSchedule } from "../engine/scheduler.js?v=17";
-import { shuffle, renderStreakStatus } from "./util.js?v=17";
+import { runSchedule } from "../engine/scheduler.js?v=18";
+import { shuffle, renderStreakStatus } from "./util.js?v=18";
 
 // block: { id, title, algorithm, quantum?, mlfq?, jobs: [{name, arrival, burst}],
 //          intro?: string, questions: [{ metric: 'completion'|'turnaround'|'response'|'waiting', job, options, correctIndex }] }
